@@ -1,0 +1,37 @@
+[
+	{
+		"id": "aurora-dashboard",
+		"name": "Aurora Ops Dashboard",
+		"summary": "Operational cockpit for real-time fleet health and status alerts.",
+		"year": 2025,
+		"status": "Active",
+		"stack": ["Hono", "React", "Cloudflare Workers"],
+		"link": "https://example.com/aurora"
+	},
+	{
+		"id": "horizon-payments",
+		"name": "Horizon Payments",
+		"summary": "Unified billing experience with automated invoice reconciliation.",
+		"year": 2024,
+		"status": "Scaling",
+		"stack": ["TypeScript", "Vite", "Postgres"],
+		"link": "https://example.com/horizon"
+	},
+	{
+		"id": "atlas-field",
+		"name": "Atlas Field Ops",
+		"summary": "Mobile-ready field toolkit for tracking service tasks.",
+		"year": 2024,
+		"status": "Pilot",
+		"stack": ["React", "Edge APIs", "Workflow"],
+		"link": "https://example.com/atlas"
+	},
+	{
+		"id": "lumen-portal",
+		"name": "Lumen Partner Portal",
+		"summary": "Self-serve onboarding and reporting for partner teams.",
+		"year": 2023,
+		"status": "Launched",
+		"stack": ["Hono", "Cloudflare KV", "Analytics"]
+	}
+]
