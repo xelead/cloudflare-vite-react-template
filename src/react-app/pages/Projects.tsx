@@ -1,56 +1,27 @@
-import { useEffect, useState } from "react";
-
-type Project = {
-	id: string;
-	name: string;
-	summary: string;
-	year: number;
-	status: string;
-	stack: string[];
-	link?: string;
-};
-
-type ProjectsResponse = {
-	projects: Project[];
-};
+import { Helmet } from "react-helmet-async";
+import { useProjectsData } from "../state/projects-data";
 
 function Projects() {
-	const [projects, setProjects] = useState<Project[]>([]);
-	const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
-		"idle",
-	);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		let cancelled = false;
-		setStatus("loading");
-		setError(null);
-
-		fetch("/api/projects")
-			.then((response) => {
-				if (!response.ok) {
-					throw new Error(`Request failed: ${response.status}`);
-				}
-				return response.json() as Promise<ProjectsResponse>;
-			})
-			.then((data) => {
-				if (cancelled) return;
-				setProjects(data.projects);
-				setStatus("success");
-			})
-			.catch((fetchError: Error) => {
-				if (cancelled) return;
-				setError(fetchError.message);
-				setStatus("error");
-			});
-
-		return () => {
-			cancelled = true;
-		};
-	}, []);
+	const { projects } = useProjectsData();
 
 	return (
 		<div className="page">
+			<Helmet>
+				<title>Projects | Cloudflare Vite React</title>
+				<meta
+					name="description"
+					content="Explore the latest projects shipped with the Cloudflare Vite React template."
+				/>
+				<meta
+					property="og:title"
+					content="Projects | Cloudflare Vite React"
+				/>
+				<meta
+					property="og:description"
+					content="Explore the latest projects shipped with the Cloudflare Vite React template."
+				/>
+				<meta property="og:type" content="website" />
+			</Helmet>
 			<section className="hero hero-slim">
 				<div className="hero-copy">
 					<h1>Projects</h1>
@@ -58,15 +29,7 @@ function Projects() {
 				</div>
 			</section>
 
-			{status === "loading" && (
-				<div className="status-card">Loading projects...</div>
-			)}
-			{status === "error" && (
-				<div className="status-card status-error">
-					Could not load projects. {error}
-				</div>
-			)}
-			{status === "success" && projects.length === 0 && (
+			{projects.length === 0 && (
 				<div className="status-card">No projects available yet.</div>
 			)}
 
