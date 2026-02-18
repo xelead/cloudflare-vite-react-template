@@ -12,7 +12,7 @@ function App() {
 					<NavLink to="/" end>
 						Home
 					</NavLink>
-					<NavLink to="/projects" reloadDocument>
+					<NavLink to="/projects">
 						Projects
 					</NavLink>
 				</nav>
