@@ -1,7 +1,34 @@
+import { useEffect, useState } from "react";
 import { useProjectsData } from "../state/projects-data.tsx";
+import type { ProjectsResponse } from "../types/projects.ts";
 
 function Projects() {
-	const { projects } = useProjectsData();
+	const { data, setData } = useProjectsData();
+	const { projects } = data;
+	const [hasFetched, setHasFetched] = useState(false);
+
+	useEffect(() => {
+		if (projects.length > 0 || hasFetched) {
+			return;
+		}
+
+		setHasFetched(true);
+		fetch("/api/projects")
+			.then((res) => {
+				if (!res.ok) {
+					throw new Error("Failed to load projects.");
+				}
+				return res.json() as Promise<ProjectsResponse>;
+			})
+			.then((payload) => {
+				if (Array.isArray(payload.projects)) {
+					setData({ projects: payload.projects });
+				}
+			})
+			.catch(() => {
+				// Fall back to the existing empty state.
+			});
+	}, [hasFetched, projects.length, setData]);
 
 	return (
 		<div className="page">

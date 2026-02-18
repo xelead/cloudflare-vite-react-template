@@ -1,8 +1,13 @@
-import type { ReactNode } from "react";
-import { createContext, useContext } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
+import { createContext, useContext, useState } from "react";
 import type { ProjectsResponse } from "../types/projects";
 
-const ProjectsDataContext = createContext<ProjectsResponse | null>(null);
+type ProjectsDataContextValue = {
+	data: ProjectsResponse;
+	setData: Dispatch<SetStateAction<ProjectsResponse>>;
+};
+
+const ProjectsDataContext = createContext<ProjectsDataContextValue | null>(null);
 
 export function ProjectsDataProvider({
 	data,
@@ -11,13 +16,20 @@ export function ProjectsDataProvider({
 	data: ProjectsResponse;
 	children: ReactNode;
 }) {
+	const [state, setState] = useState<ProjectsResponse>(data);
+
 	return (
-		<ProjectsDataContext.Provider value={data}>
+		<ProjectsDataContext.Provider value={{ data: state, setData: setState }}>
 			{children}
 		</ProjectsDataContext.Provider>
 	);
 }
 
 export function useProjectsData() {
-	return useContext(ProjectsDataContext) ?? { projects: [] };
+	return (
+		useContext(ProjectsDataContext) ?? {
+			data: { projects: [] },
+			setData: () => undefined,
+		}
+	);
 }
