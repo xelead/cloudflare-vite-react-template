@@ -1,4 +1,3 @@
-import { Helmet } from "react-helmet-async";
 import { useProjectsData } from "../state/projects-data";
 
 function Projects() {
@@ -6,22 +5,17 @@ function Projects() {
 
 	return (
 		<div className="page">
-			<Helmet>
-				<title>Projects | Cloudflare Vite React</title>
-				<meta
-					name="description"
-					content="Explore the latest projects shipped with the Cloudflare Vite React template."
-				/>
-				<meta
-					property="og:title"
-					content="Projects | Cloudflare Vite React"
-				/>
-				<meta
-					property="og:description"
-					content="Explore the latest projects shipped with the Cloudflare Vite React template."
-				/>
-				<meta property="og:type" content="website" />
-			</Helmet>
+			<title>Projects | Cloudflare Vite React</title>
+			<meta
+				name="description"
+				content="Explore the latest projects shipped with the Cloudflare Vite React template."
+			/>
+			<meta property="og:title" content="Projects | Cloudflare Vite React" />
+			<meta
+				property="og:description"
+				content="Explore the latest projects shipped with the Cloudflare Vite React template."
+			/>
+			<meta property="og:type" content="website" />
 			<section className="hero hero-slim">
 				<div className="hero-copy">
 					<h1>Projects</h1>
