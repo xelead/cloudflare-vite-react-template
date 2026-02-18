@@ -1,4 +1,4 @@
-import { useProjectsData } from "../state/projects-data";
+import { useProjectsData } from "../state/projects-data.tsx";
 
 function Projects() {
 	const { projects } = useProjectsData();

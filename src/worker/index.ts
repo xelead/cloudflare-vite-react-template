@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import projects from "./data/projects.json" assert { type: "json" };
-import { render } from "../react-app/ssr/render";
+import { render } from "../react-app/ssr/render.tsx";
 
 const app = new Hono<{ Bindings: Env }>();
 
