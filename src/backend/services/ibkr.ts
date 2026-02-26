@@ -11,7 +11,8 @@ class IBKRService {
   private ib: IBApi;
   private connected: boolean = false;
   private pendingRequests: Map<number, (price: number) => void> = new Map();
-  private currentReqId: number = 1;
+  private currentMarketDataReqId: number = 1;
+  private nextOrderId: number | null = null;
 
   constructor() {
     const host = process.env.IBKR_HOST || "127.0.0.1";
@@ -47,12 +48,25 @@ class IBKRService {
     this.ib.on(EventName.connected, () => {
       console.log("IBKR TWS connected");
       this.connected = true;
+      this.nextOrderId = null;
+
+      try {
+        this.ib.reqIds();
+      } catch (error) {
+        console.error("Failed to request next valid order id from IBKR:", error);
+      }
     });
 
     // Handle disconnection
     this.ib.on(EventName.disconnected, () => {
       console.log("IBKR TWS disconnected");
       this.connected = false;
+      this.nextOrderId = null;
+    });
+
+    this.ib.on(EventName.nextValidId, (orderId: number) => {
+      this.nextOrderId = orderId;
+      console.log(`IBKR next valid order id: ${orderId}`);
     });
 
     // Handle errors
@@ -90,7 +104,7 @@ class IBKRService {
         return;
       }
 
-      const reqId = this.currentReqId++;
+      const reqId = this.currentMarketDataReqId++;
       this.pendingRequests.set(reqId, resolve);
 
       // Set timeout to cancel request if no response
@@ -113,6 +127,45 @@ class IBKRService {
     });
   }
 
+  private async reserveOrderId(): Promise<number | null> {
+    if (!this.connected) {
+      return null;
+    }
+
+    if (this.nextOrderId === null) {
+      try {
+        this.ib.reqIds();
+      } catch (error) {
+        console.error("Failed to request order id from IBKR:", error);
+        return null;
+      }
+
+      await new Promise<void>((resolve) => {
+        const startedAt = Date.now();
+        const interval = setInterval(() => {
+          if (this.nextOrderId !== null) {
+            clearInterval(interval);
+            resolve();
+            return;
+          }
+
+          if (Date.now() - startedAt >= 5000) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 100);
+      });
+    }
+
+    if (this.nextOrderId === null) {
+      return null;
+    }
+
+    const orderId = this.nextOrderId;
+    this.nextOrderId += 1;
+    return orderId;
+  }
+
   public async placeLimitOrder(
     symbol: string,
     action: "BUY" | "SELL",
@@ -127,8 +180,8 @@ class IBKRService {
         return;
       }
 
-      const orderId = this.currentReqId++;
       let settled = false;
+      let orderId = -1;
 
       const finish = (result: OrderPlacementResult) => {
         if (settled) {
@@ -168,32 +221,45 @@ class IBKRService {
         finish({ success: false, orderId, reason });
       };
 
-      this.ib.on(EventName.orderStatus, orderStatusHandler);
-      this.ib.on(EventName.error, orderErrorHandler);
+      const placeOrder = async () => {
+        const reservedOrderId = await this.reserveOrderId();
+        if (reservedOrderId === null) {
+          const reason = "Unable to reserve a valid order id from IBKR";
+          console.error("[IBKR ORDER]", reason, { symbol, action, quantity, limitPrice });
+          finish({ success: false, orderId: -1, reason });
+          return;
+        }
 
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        const reason = `Order timed out after 30 seconds (orderId: ${orderId})`;
-        console.error("[IBKR ORDER]", reason, { symbol, action, quantity, limitPrice });
-        finish({ success: false, orderId, reason });
-      }, 30000);
+        orderId = reservedOrderId;
+        this.ib.on(EventName.orderStatus, orderStatusHandler);
+        this.ib.on(EventName.error, orderErrorHandler);
 
-      try {
-        // Place limit order
-        const contract = { symbol, secType: "STK", exchange: "SMART", currency: "USD" };
-        const order = {
-          action,
-          totalQuantity: quantity,
-          orderType: "LMT",
-          lmtPrice: limitPrice,
-        };
+        // Timeout after 30 seconds
+        setTimeout(() => {
+          const reason = `Order timed out after 30 seconds (orderId: ${orderId})`;
+          console.error("[IBKR ORDER]", reason, { symbol, action, quantity, limitPrice });
+          finish({ success: false, orderId, reason });
+        }, 30000);
 
-        this.ib.placeOrder(orderId, contract, order);
-        console.log(`Placed ${action} limit order for ${quantity} shares of ${symbol} at $${limitPrice}`);
-      } catch (error) {
-        console.error(`Error placing order for ${symbol}:`, error);
-        finish({ success: false, orderId, reason: "Failed to place order with IBKR API" });
-      }
+        try {
+          // Place limit order
+          const contract = { symbol, secType: "STK", exchange: "SMART", currency: "USD" };
+          const order = {
+            action,
+            totalQuantity: quantity,
+            orderType: "LMT",
+            lmtPrice: limitPrice,
+          };
+
+          this.ib.placeOrder(orderId, contract, order);
+          console.log(`Placed ${action} limit order for ${quantity} shares of ${symbol} at $${limitPrice}`);
+        } catch (error) {
+          console.error(`Error placing order for ${symbol}:`, error);
+          finish({ success: false, orderId, reason: "Failed to place order with IBKR API" });
+        }
+      };
+
+      void placeOrder();
     });
   }
 
