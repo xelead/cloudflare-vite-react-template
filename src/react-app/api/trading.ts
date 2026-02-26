@@ -28,6 +28,32 @@ export interface Config {
   tickers: string[];
 }
 
+async function extractErrorMessage(response: Response, fallbackMessage: string): Promise<string> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      const error = await response.json();
+      if (error?.error && typeof error.error === "string") {
+        return error.error;
+      }
+    } catch {
+      // Ignore parse failures and fall back to text/status.
+    }
+  }
+
+  try {
+    const text = (await response.text()).trim();
+    if (text) {
+      return text;
+    }
+  } catch {
+    // Ignore read failures and use fallback.
+  }
+
+  return `${fallbackMessage} (${response.status})`;
+}
+
 export async function getConfig(): Promise<Config> {
   const response = await fetch(`${API_URL}/api/config`);
   if (!response.ok) {
@@ -53,8 +79,8 @@ export async function buyStock(symbol: string, shares: number): Promise<void> {
     body: JSON.stringify({ shares }),
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to buy stock");
+    const message = await extractErrorMessage(response, "Failed to buy stock");
+    throw new Error(message);
   }
 }
 
@@ -66,8 +92,8 @@ export async function sellStock(symbol: string): Promise<void> {
     },
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to sell stock");
+    const message = await extractErrorMessage(response, "Failed to sell stock");
+    throw new Error(message);
   }
 }
 

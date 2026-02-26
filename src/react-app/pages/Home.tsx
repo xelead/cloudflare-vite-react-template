@@ -8,6 +8,7 @@ function Home() {
   const [cash, setCash] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -34,13 +35,27 @@ function Home() {
   }, [fetchData]);
 
   const handleBuy = async (symbol: string, shares: number) => {
-    await buyStock(symbol, shares);
-    await fetchData();
+    try {
+      await buyStock(symbol, shares);
+      setActionError(null);
+      await fetchData();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to buy stock";
+      setActionError(message);
+      throw err;
+    }
   };
 
   const handleSell = async (symbol: string) => {
-    await sellStock(symbol);
-    await fetchData();
+    try {
+      await sellStock(symbol);
+      setActionError(null);
+      await fetchData();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to sell stock";
+      setActionError(message);
+      throw err;
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -112,6 +127,12 @@ function Home() {
           </div>
         </div>
       </header>
+
+      {actionError && (
+        <div className="action-error" role="alert">
+          Order failed: {actionError}
+        </div>
+      )}
 
       <section className="trading-grid">
         {stocks.map((stock) => (

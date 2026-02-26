@@ -8,6 +8,8 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
+  position: relative;
+  overflow: visible;
 }
 
 .ticker-symbol {
