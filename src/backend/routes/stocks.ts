@@ -48,12 +48,14 @@ router.post("/stocks/:symbol/buy", async (req: Request, res: Response) => {
     const { shares } = req.body;
 
     if (!shares || shares <= 0) {
+      console.warn("[TRADE BUY] Rejected invalid shares", { symbol, shares });
       res.status(400).json({ error: "Invalid shares amount" });
       return;
     }
 
     // Check IBKR connection first
     if (!ibkrService.isConnected()) {
+      console.error("[TRADE BUY] Rejected: IBKR not connected", { symbol, shares });
       res.status(503).json({ error: "Not connected to IBKR. Please ensure TWS/IB Gateway is running." });
       return;
     }
@@ -63,6 +65,7 @@ router.post("/stocks/:symbol/buy", async (req: Request, res: Response) => {
     const currentPrice = priceData?.price || 0;
 
     if (currentPrice <= 0) {
+      console.error("[TRADE BUY] Rejected: no price available", { symbol });
       res.status(400).json({ error: "Price not available" });
       return;
     }
@@ -78,15 +81,28 @@ router.post("/stocks/:symbol/buy", async (req: Request, res: Response) => {
 
     // Check if enough cash
     if (cashBalance.amount < total) {
+      console.warn("[TRADE BUY] Rejected insufficient funds", {
+        symbol,
+        shares,
+        total,
+        cashAvailable: cashBalance.amount,
+      });
       res.status(400).json({ error: "Insufficient funds" });
       return;
     }
 
     // Place order with IBKR and wait for confirmation
-    const orderSuccess = await ibkrService.placeLimitOrder(symbol, "BUY", shares, currentPrice);
+    const orderResult = await ibkrService.placeLimitOrder(symbol, "BUY", shares, currentPrice);
 
-    if (!orderSuccess) {
-      res.status(502).json({ error: "Order rejected by IBKR. Check TWS/IB Gateway for details." });
+    if (!orderResult.success) {
+      console.error("[TRADE BUY] IBKR rejected order", {
+        symbol,
+        shares,
+        price: currentPrice,
+        orderId: orderResult.orderId,
+        reason: orderResult.reason || "Unknown IBKR rejection",
+      });
+      res.status(502).json({ error: `Order rejected by IBKR: ${orderResult.reason || "Unknown reason"}` });
       return;
     }
 
@@ -146,6 +162,7 @@ router.post("/stocks/:symbol/sell", async (req: Request, res: Response) => {
 
     // Check IBKR connection first
     if (!ibkrService.isConnected()) {
+      console.error("[TRADE SELL] Rejected: IBKR not connected", { symbol });
       res.status(503).json({ error: "Not connected to IBKR. Please ensure TWS/IB Gateway is running." });
       return;
     }
@@ -154,6 +171,7 @@ router.post("/stocks/:symbol/sell", async (req: Request, res: Response) => {
     const position = await Position.findOne({ symbol });
 
     if (!position || position.shares <= 0) {
+      console.warn("[TRADE SELL] Rejected: no shares to sell", { symbol });
       res.status(400).json({ error: "No shares to sell" });
       return;
     }
@@ -163,6 +181,7 @@ router.post("/stocks/:symbol/sell", async (req: Request, res: Response) => {
     const currentPrice = priceData?.price || 0;
 
     if (currentPrice <= 0) {
+      console.error("[TRADE SELL] Rejected: no price available", { symbol });
       res.status(400).json({ error: "Price not available" });
       return;
     }
@@ -171,10 +190,17 @@ router.post("/stocks/:symbol/sell", async (req: Request, res: Response) => {
     const total = currentPrice * shares;
 
     // Place order with IBKR and wait for confirmation
-    const orderSuccess = await ibkrService.placeLimitOrder(symbol, "SELL", shares, currentPrice);
+    const orderResult = await ibkrService.placeLimitOrder(symbol, "SELL", shares, currentPrice);
 
-    if (!orderSuccess) {
-      res.status(502).json({ error: "Order rejected by IBKR. Check TWS/IB Gateway for details." });
+    if (!orderResult.success) {
+      console.error("[TRADE SELL] IBKR rejected order", {
+        symbol,
+        shares,
+        price: currentPrice,
+        orderId: orderResult.orderId,
+        reason: orderResult.reason || "Unknown IBKR rejection",
+      });
+      res.status(502).json({ error: `Order rejected by IBKR: ${orderResult.reason || "Unknown reason"}` });
       return;
     }
 

@@ -1,6 +1,12 @@
 import { IBApi, EventName, ErrorCode } from "@stoqey/ib";
 import StockPrice from "../models/StockPrice";
 
+export interface OrderPlacementResult {
+  success: boolean;
+  orderId: number;
+  reason?: string;
+}
+
 class IBKRService {
   private ib: IBApi;
   private connected: boolean = false;
@@ -107,33 +113,69 @@ class IBKRService {
     });
   }
 
-  public async placeLimitOrder(symbol: string, action: "BUY" | "SELL", quantity: number, limitPrice: number): Promise<boolean> {
+  public async placeLimitOrder(
+    symbol: string,
+    action: "BUY" | "SELL",
+    quantity: number,
+    limitPrice: number
+  ): Promise<OrderPlacementResult> {
     return new Promise((resolve) => {
       if (!this.connected) {
-        console.log("IBKR not connected, cannot place order");
-        resolve(false);
+        const reason = "IBKR not connected, cannot place order";
+        console.error(`[IBKR ORDER] ${reason}`, { symbol, action, quantity, limitPrice });
+        resolve({ success: false, orderId: -1, reason });
         return;
       }
 
       const orderId = this.currentReqId++;
+      let settled = false;
+
+      const finish = (result: OrderPlacementResult) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        this.ib.off(EventName.orderStatus, orderStatusHandler);
+        this.ib.off(EventName.error, orderErrorHandler);
+        resolve(result);
+      };
 
       // Set up order status handler
-      const orderStatusHandler = (orderId: number, status: string) => {
+      const orderStatusHandler = (eventOrderId: number, status: string) => {
+        if (eventOrderId !== orderId) {
+          return;
+        }
+
+        console.log(`[IBKR ORDER] ${action} ${symbol} order ${orderId} status: ${status}`);
+
         if (status === "Filled" || status === "PartiallyFilled") {
-          this.ib.off(EventName.orderStatus, orderStatusHandler);
-          resolve(true);
-        } else if (status === "Cancelled" || status === "ApiCancelled") {
-          this.ib.off(EventName.orderStatus, orderStatusHandler);
-          resolve(false);
+          finish({ success: true, orderId, reason: `Order status: ${status}` });
+          return;
+        }
+
+        if (status === "Cancelled" || status === "ApiCancelled" || status === "Inactive") {
+          finish({ success: false, orderId, reason: `Order status: ${status}` });
         }
       };
 
+      const orderErrorHandler = (err: Error, code: ErrorCode, reqId: number) => {
+        if (reqId !== orderId) {
+          return;
+        }
+
+        const reason = `IBKR error [${code}] for order ${orderId}: ${err.message}`;
+        console.error("[IBKR ORDER]", reason, { symbol, action, quantity, limitPrice });
+        finish({ success: false, orderId, reason });
+      };
+
       this.ib.on(EventName.orderStatus, orderStatusHandler);
+      this.ib.on(EventName.error, orderErrorHandler);
 
       // Timeout after 30 seconds
       setTimeout(() => {
-        this.ib.off(EventName.orderStatus, orderStatusHandler);
-        resolve(false);
+        const reason = `Order timed out after 30 seconds (orderId: ${orderId})`;
+        console.error("[IBKR ORDER]", reason, { symbol, action, quantity, limitPrice });
+        finish({ success: false, orderId, reason });
       }, 30000);
 
       try {
@@ -150,7 +192,7 @@ class IBKRService {
         console.log(`Placed ${action} limit order for ${quantity} shares of ${symbol} at $${limitPrice}`);
       } catch (error) {
         console.error(`Error placing order for ${symbol}:`, error);
-        resolve(false);
+        finish({ success: false, orderId, reason: "Failed to place order with IBKR API" });
       }
     });
   }
