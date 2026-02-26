@@ -51,3 +51,4 @@ Use packages instead of implementing everything in the code base
 Follow security best practices
 commit all changes at the end of the work
 Use snake case for file and folder names
+add each prompt to prompts.md file

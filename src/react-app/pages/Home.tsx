@@ -1,71 +1,134 @@
-import { useState } from "react";
-import reactLogo from "../assets/react.svg";
-import viteLogo from "/vite.svg";
-import cloudflareLogo from "../assets/Cloudflare_Logo.svg";
-import honoLogo from "../assets/hono.svg";
+import { useState, useEffect, useCallback } from "react";
+import TradingPanel from "../components/TradingPanel";
+import { getStocks, buyStock, sellStock, getCashBalance, Stock } from "../api/trading";
+import "./Home.css";
 
 function Home() {
-	const [count, setCount] = useState(0);
-	const [name, setName] = useState("unknown");
+  const [stocks, setStocks] = useState<Stock[]>([]);
+  const [cash, setCash] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-	return (
-		<div className="page">
-			<section className="hero">
-				<div className="hero-logos">
-					<a href="https://vite.dev" target="_blank">
-						<img src={viteLogo} className="logo" alt="Vite logo" />
-					</a>
-					<a href="https://react.dev" target="_blank">
-						<img src={reactLogo} className="logo react" alt="React logo" />
-					</a>
-					<a href="https://hono.dev/" target="_blank">
-						<img src={honoLogo} className="logo cloudflare" alt="Hono logo" />
-					</a>
-					<a href="https://workers.cloudflare.com/" target="_blank">
-						<img
-							src={cloudflareLogo}
-							className="logo cloudflare"
-							alt="Cloudflare logo"
-						/>
-					</a>
-				</div>
-				<div className="hero-copy">
-					<h1>Vite + React + Hono + Cloudflare</h1>
-					<p>
-						A clean template for shipping full-stack apps with a Worker API and
-						 Vite-powered UI.
-					</p>
-				</div>
-			</section>
+  const fetchData = useCallback(async () => {
+    try {
+      const [stocksData, cashData] = await Promise.all([
+        getStocks(),
+        getCashBalance(),
+      ]);
+      setStocks(stocksData.stocks);
+      setCash(cashData.cash);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-			<section className="grid">
-				<div className="card">
-					<h2>Counter</h2>
-					<p>Quick UI state check while you iterate.</p>
-					<button
-						onClick={() => setCount((value) => value + 1)}
-						aria-label="increment"
-					>
-						count is {count}
-					</button>
-				</div>
-				<div className="card">
-					<h2>Worker API</h2>
-					<p>Fetches a value from the Worker running your API routes.</p>
-					<button
-						onClick={() => {
-							fetch("/api/")
-								.then((res) => res.json() as Promise<{ name: string }>)
-								.then((data) => setName(data.name));
-						}}
-						aria-label="get name"
-					>
-						Name from API is: {name}
-					</button>
-				</div>
-			</section>
-		</div>
-	);
+  useEffect(() => {
+    fetchData();
+
+    // Poll for updates every 5 seconds
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  const handleBuy = async (symbol: string, shares: number) => {
+    await buyStock(symbol, shares);
+    await fetchData();
+  };
+
+  const handleSell = async (symbol: string) => {
+    await sellStock(symbol);
+    await fetchData();
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(value);
+  };
+
+  const totalPortfolioValue = stocks.reduce(
+    (sum, stock) => sum + stock.currentPrice * stock.shares,
+    0
+  );
+
+  const totalProfit = stocks.reduce((sum, stock) => sum + stock.profit, 0);
+
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="loading">Loading trading data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page">
+        <div className="error">
+          Error: {error}
+          <br />
+          <button onClick={fetchData} className="btn-retry">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <header className="trading-header">
+        <div className="header-content">
+          <h1>Stock Trading</h1>
+          <div className="portfolio-summary">
+            <div className="summary-item">
+              <span className="summary-label">Cash</span>
+              <span className="summary-value">{formatCurrency(cash)}</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label">Portfolio</span>
+              <span className="summary-value">{formatCurrency(totalPortfolioValue)}</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label">Total</span>
+              <span className="summary-value">
+                {formatCurrency(cash + totalPortfolioValue)}
+              </span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-label">P/L</span>
+              <span
+                className={`summary-value ${
+                  totalProfit >= 0 ? "profit-positive" : "profit-negative"
+                }`}
+              >
+                {formatCurrency(totalProfit)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section className="trading-grid">
+        {stocks.map((stock) => (
+          <TradingPanel
+            key={stock.symbol}
+            symbol={stock.symbol}
+            currentPrice={stock.currentPrice}
+            lastBuyPrice={stock.lastBuyPrice}
+            shares={stock.shares}
+            profit={stock.profit}
+            onBuy={handleBuy}
+            onSell={handleSell}
+          />
+        ))}
+      </section>
+    </div>
+  );
 }
 
 export default Home;
