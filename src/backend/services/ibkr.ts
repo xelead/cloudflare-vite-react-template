@@ -13,11 +13,17 @@ class IBKRService {
   private pendingRequests: Map<number, (price: number) => void> = new Map();
   private currentMarketDataReqId: number = 1;
   private nextOrderId: number | null = null;
+  private readonly orderTimeoutMs: number;
+  private readonly limitSlippageBps: number;
+  private readonly orderType: "LMT" | "MKT";
 
   constructor() {
     const host = process.env.IBKR_HOST || "127.0.0.1";
     const port = parseInt(process.env.IBKR_PORT || "7497");
     const clientId = parseInt(process.env.IBKR_CLIENT_ID || "1");
+    this.orderTimeoutMs = parseInt(process.env.IBKR_ORDER_TIMEOUT_MS || "30000");
+    this.limitSlippageBps = parseInt(process.env.IBKR_LIMIT_SLIPPAGE_BPS || "100");
+    this.orderType = process.env.IBKR_ORDER_TYPE === "LMT" ? "LMT" : "MKT";
 
     this.ib = new IBApi({
       host,
@@ -28,6 +34,15 @@ class IBKRService {
 
     // Try to connect
     this.connect(clientId);
+    console.log(
+      `[IBKR ORDER] Config => type=${this.orderType}, timeoutMs=${this.orderTimeoutMs}, limitSlippageBps=${this.limitSlippageBps}`
+    );
+  }
+
+  private getMarketableLimitPrice(action: "BUY" | "SELL", basePrice: number): number {
+    const slippageFactor = this.limitSlippageBps / 10000;
+    const rawPrice = action === "BUY" ? basePrice * (1 + slippageFactor) : basePrice * (1 - slippageFactor);
+    return Math.max(0.01, parseFloat(rawPrice.toFixed(2)));
   }
 
   private setupEventHandlers(): void {
@@ -182,12 +197,18 @@ class IBKRService {
 
       let settled = false;
       let orderId = -1;
+      let pendingStatusSeen = false;
+      let timeoutId: NodeJS.Timeout | null = null;
 
       const finish = (result: OrderPlacementResult) => {
         if (settled) {
           return;
         }
         settled = true;
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
         this.ib.off(EventName.orderStatus, orderStatusHandler);
         this.ib.off(EventName.error, orderErrorHandler);
         resolve(result);
@@ -203,6 +224,11 @@ class IBKRService {
 
         if (status === "Filled" || status === "PartiallyFilled") {
           finish({ success: true, orderId, reason: `Order status: ${status}` });
+          return;
+        }
+
+        if (status === "Submitted" || status === "PreSubmitted" || status === "PendingSubmit") {
+          pendingStatusSeen = true;
           return;
         }
 
@@ -234,25 +260,37 @@ class IBKRService {
         this.ib.on(EventName.orderStatus, orderStatusHandler);
         this.ib.on(EventName.error, orderErrorHandler);
 
-        // Timeout after 30 seconds
-        setTimeout(() => {
-          const reason = `Order timed out after 30 seconds (orderId: ${orderId})`;
+        timeoutId = setTimeout(() => {
+          const reason = pendingStatusSeen
+            ? `Order accepted by IBKR but not filled within ${this.orderTimeoutMs / 1000}s (orderId: ${orderId}).`
+            : `Order timed out after ${this.orderTimeoutMs / 1000}s without IBKR fill confirmation (orderId: ${orderId}).`;
           console.error("[IBKR ORDER]", reason, { symbol, action, quantity, limitPrice });
           finish({ success: false, orderId, reason });
-        }, 30000);
+        }, this.orderTimeoutMs);
 
         try {
-          // Place limit order
+          const adjustedLimitPrice = this.getMarketableLimitPrice(action, limitPrice);
           const contract = { symbol, secType: "STK", exchange: "SMART", currency: "USD" };
-          const order = {
+          const order: Record<string, unknown> = {
             action,
             totalQuantity: quantity,
-            orderType: "LMT",
-            lmtPrice: limitPrice,
+            orderType: this.orderType,
+            tif: "DAY",
+            transmit: true,
+            outsideRth: true,
           };
+          if (this.orderType === "LMT") {
+            order.lmtPrice = adjustedLimitPrice;
+          }
 
           this.ib.placeOrder(orderId, contract, order);
-          console.log(`Placed ${action} limit order for ${quantity} shares of ${symbol} at $${limitPrice}`);
+          if (this.orderType === "MKT") {
+            console.log(`Placed ${action} market order for ${quantity} shares of ${symbol}`);
+          } else {
+            console.log(
+              `Placed ${action} marketable limit order for ${quantity} shares of ${symbol} at $${adjustedLimitPrice} (base: $${limitPrice})`
+            );
+          }
         } catch (error) {
           console.error(`Error placing order for ${symbol}:`, error);
           finish({ success: false, orderId, reason: "Failed to place order with IBKR API" });

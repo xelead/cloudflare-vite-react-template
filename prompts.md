@@ -70,3 +70,5 @@ It seems endpoint failed but no eror is displayed on the UI.
 There is no error logged on the server side, too. If order didn't go through, there should be some logs on the server explaining why
 
 yes patch it
+
+it says order rejected by ibkr and timesout after 30 seconds. In other words, the order never goes through
