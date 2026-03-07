@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useProjectsData } from "../state/projects-data.tsx";
-import type { ProjectsResponse } from "../types/projects.ts";
+import { useProjectsData } from "./projects_data.tsx";
+import type { ProjectsResponse } from "./projects_types.ts";
 
-function Projects() {
+function ProjectsPage() {
 	const { data, setData } = useProjectsData();
 	const { projects } = data;
 	const [hasFetched, setHasFetched] = useState(false);
@@ -82,4 +82,4 @@ function Projects() {
 	);
 }
 
-export default Projects;
+export default ProjectsPage;

@@ -1,14 +1,10 @@
 import { Hono } from "hono";
-import projects from "./data/projects.json" assert { type: "json" };
-import { render } from "../react-app/ssr/render.tsx";
+import {ProjectApiRoutes} from "./modules/projects/project_api_routes.ts";
+import {ProjectSsrRoutes} from "./modules/projects/project_ssr_routes.ts";
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
-app.get("/api/projects", (c) => c.json({ projects }));
-app.get("/projects", (c) => {
-	const { html } = render(new URL(c.req.url).pathname, { projects });
-	return c.html(html);
-});
+new ProjectApiRoutes(app).register_routes()
+new ProjectSsrRoutes(app).register_routes()
 
 export default app;

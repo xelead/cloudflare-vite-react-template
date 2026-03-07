@@ -3,8 +3,8 @@ import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
-import { ProjectsDataProvider } from "./state/projects-data.tsx";
-import type { ProjectsResponse } from "./types/projects.ts";
+import { ProjectsDataProvider } from "./modules/projects/projects_data.tsx";
+import type { ProjectsResponse } from "./modules/projects/projects_types.tsx";
 
 declare global {
 	interface Window {

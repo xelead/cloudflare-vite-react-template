@@ -1,7 +1,6 @@
-import { NavLink, Route, Routes } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import "./App.css";
-import Home from "./pages/Home";
-import Projects from "./pages/Projects";
+import AppRoutes from "./app_routes";
 
 function App() {
 	return (
@@ -18,10 +17,7 @@ function App() {
 				</nav>
 			</header>
 			<main className="content">
-				<Routes>
-					<Route path="/" element={<Home />} />
-					<Route path="/projects" element={<Projects />} />
-				</Routes>
+				<AppRoutes />
 			</main>
 		</div>
 	);

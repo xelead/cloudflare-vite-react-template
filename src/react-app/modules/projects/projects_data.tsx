@@ -1,6 +1,6 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { createContext, useContext, useState } from "react";
-import type { ProjectsResponse } from "../types/projects";
+import type { ProjectsResponse } from "./projects_types.ts";
 
 type ProjectsDataContextValue = {
 	data: ProjectsResponse;

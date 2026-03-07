@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { renderToString } from "react-dom/server";
 import { StaticRouter } from "react-router-dom/server";
 import App from "../App";
-import { ProjectsDataProvider } from "../state/projects-data";
-import type { ProjectsResponse } from "../types/projects";
+import { ProjectsDataProvider } from "../modules/projects/projects_data.tsx";
+import type { ProjectsResponse } from "../modules/projects/projects_types.ts";
 import appStyles from "../App.css?raw";
 import baseStyles from "../index.css?raw";
 
