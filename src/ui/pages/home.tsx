@@ -1,7 +1,7 @@
 import { useState } from "react";
 import reactLogo from "@src/ui/assets/react.svg";
 import viteLogo from "/vite.svg";
-import cloudflareLogo from "@src/ui/assets/Cloudflare_Logo.svg";
+import cloudflareLogo from "@src/ui/assets/cloudflare_logo.svg";
 import honoLogo from "@src/ui/assets/hono.svg";
 
 function Home() {

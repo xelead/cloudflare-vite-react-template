@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { renderToString } from "react-dom/server";
 import { StaticRouter } from "react-router-dom/server";
-import App from "@src/ui/App";
+import App from "@src/ui/app";
 import { PeopleDataProvider } from "@src/ui/modules/people/people_data.tsx";
 import { ProjectsDataProvider } from "@src/ui/modules/projects/projects_data.tsx";
 import type { AppInitialData } from "@src/ui/types/app_initial_data.ts";
-import appStyles from "@src/ui/App.css?raw";
+import appStyles from "@src/ui/app.css?raw";
 import baseStyles from "@src/ui/index.css?raw";
 
 type RenderResult = {

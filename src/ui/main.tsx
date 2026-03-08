@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import "@src/ui/index.css";
-import App from "@src/ui/App";
+import App from "@src/ui/app";
 import { PeopleDataProvider } from "@src/ui/modules/people/people_data.tsx";
 import { ProjectsDataProvider } from "@src/ui/modules/projects/projects_data.tsx";
 import type { AppInitialData } from "@src/ui/types/app_initial_data.ts";
