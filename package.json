@@ -39,7 +39,7 @@
 		"cf-typegen": "wrangler types",
 		"check": "tsc && vite build && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",
-		"dev": "vite",
+		"dev": "vite --host",
 		"format": "corepack pnpm dlx prettier@3.6.2 --write . --use-tabs --single-quote false --trailing-comma all --semi true",
 		"lint": "eslint .",
 		"preview": "npm run build && vite preview"
