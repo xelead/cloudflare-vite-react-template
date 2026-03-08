@@ -1,7 +1,6 @@
-import projects from "@src/api/modules/projects/projects.json" assert { type: "json" };
-import { render } from "@src/ui/ssr/render.tsx";
-import {IApp} from "@src/api/fw/api_app_types.ts";
-import {safeApi} from "@src/api/fw/routes/safe_api.ts";
+import { IApp } from "@src/api/fw/api_app_types.ts";
+import { safeApi } from "@src/api/fw/routes/safe_api.ts";
+import projectsGet from "@src/api/modules/projects/actions/projects_get.ts";
 
 export class ProjectApiRoutes {
 	private app: IApp;
@@ -11,16 +10,6 @@ export class ProjectApiRoutes {
 	}
 	register_routes() {
 		const app = this.app;
-		// API
-		app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
-		app.get("/api/projects", (c) => c.json({ projects }));
-
-		// SSR
-		app.get("/projects", (c) => {
-			safeApi(c,  c,  () => {
-				const { html } = render(new URL(c.req.url).pathname, { projects, people: [] });
-				return c.html(html);
-			})
-		});
+		app.get("/api/projects", (c) => safeApi(c, (request_context) => projectsGet(request_context)));
 	}
 }

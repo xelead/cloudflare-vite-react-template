@@ -1,4 +1,4 @@
-import { IApp } from "@src/interfaces/api.ts";
+import { IApp } from "@src/api/fw/api_app_types.ts";
 
 type RouteClass = new (app: IApp) => { register_routes: () => void };
 type RouteRegistrar = (app: IApp) => void;
