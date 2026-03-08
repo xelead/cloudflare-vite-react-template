@@ -5,6 +5,7 @@ import { ApiRes, type IApiRequestContext, type IApiResult } from "@src/interface
 
 class ApiRequestContext implements IApiRequestContext {
 	private c: Context<{ Bindings: Env }>;
+	private merged_request_data: Record<string, unknown> | null = null;
 
 	constructor(c: Context<{ Bindings: Env }>) {
 		this.c = c;
@@ -33,6 +34,77 @@ class ApiRequestContext implements IApiRequestContext {
 
 	async getUserIdAsync(): Promise<string | null> {
 		return this.c.req.header("x-user-id") ?? null;
+	}
+
+	async getRequestDataAsync<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T> {
+		if (this.merged_request_data !== null) {
+			return this.merged_request_data as T;
+		}
+
+		const body_data = await this.getRequestBodyAsync();
+		const query_data = this.c.req.query() as Record<string, unknown>;
+		const route_params = this.c.req.param() as Record<string, unknown>;
+
+		// Merge precedence follows body -> querystring -> route params.
+		this.merged_request_data = {
+			...body_data,
+			...query_data,
+			...route_params,
+		};
+
+		return this.merged_request_data as T;
+	}
+
+	private normalizeObject(value: unknown): Record<string, unknown> {
+		if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+			return value as Record<string, unknown>;
+		}
+
+		if (value === undefined || value === null) {
+			return {};
+		}
+
+		return { body: value };
+	}
+
+	private async getRequestBodyAsync(): Promise<Record<string, unknown>> {
+		const method = this.c.req.method.toUpperCase();
+		if (method === "GET" || method === "HEAD") {
+			return {};
+		}
+
+		const content_type = this.c.req.header("content-type")?.toLowerCase() ?? "";
+		if (content_type.length === 0) {
+			return {};
+		}
+
+		if (content_type.includes("application/json")) {
+			try {
+				const json_body = await this.c.req.json<unknown>();
+				return this.normalizeObject(json_body);
+			} catch {
+				throw {
+					code: 400,
+					errorType: "validation_error",
+					message: "Invalid JSON request body.",
+				};
+			}
+		}
+
+		if (
+			content_type.includes("application/x-www-form-urlencoded") ||
+			content_type.includes("multipart/form-data")
+		) {
+			const parsed = await this.c.req.parseBody();
+			return parsed as Record<string, unknown>;
+		}
+
+		if (content_type.includes("text/plain")) {
+			const text_body = await this.c.req.text();
+			return text_body.length > 0 ? { body: text_body } : {};
+		}
+
+		return {};
 	}
 }
 

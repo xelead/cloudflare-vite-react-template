@@ -10,6 +10,7 @@ export interface IApiRequestContext {
     getOrgZoneIdAsync(): Promise<string | null>
     getLocaleAsync(): Promise<IAppLocale>
     getUserIdAsync(): Promise<string | null>
+    getRequestDataAsync<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T>
 }
 
 export interface IApiResult<T> {
