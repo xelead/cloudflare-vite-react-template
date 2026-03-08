@@ -1,12 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useProjectsData } from "@src/ui/modules/projects/projects_data.tsx";
 import type { Project, ProjectApiResponse } from "@src/ui/modules/projects/projects_types.ts";
 
 function ProjectDetailsPage() {
 	const { project_id } = useParams();
-	const [project, setProject] = useState<Project | null>(null);
+	const { data } = useProjectsData();
+	const initialProject = useMemo<Project | null>(() => {
+		if (!project_id) {
+			return null;
+		}
+
+		return data.projects.find((item) => item.id === project_id) ?? null;
+	}, [data.projects, project_id]);
+	const [project, setProject] = useState<Project | null>(initialProject);
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+	useEffect(() => {
+		setProject(initialProject);
+	}, [initialProject]);
 
 	useEffect(() => {
 		if (!project_id) {
@@ -43,7 +56,7 @@ function ProjectDetailsPage() {
 			});
 	}, [project_id]);
 
-	if (isLoading) {
+	if (isLoading && !project) {
 		return (
 			<div className="page">
 				<title>Loading Project | Cloudflare Vite React</title>
