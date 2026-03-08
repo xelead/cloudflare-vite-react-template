@@ -1,5 +1,8 @@
-import { isDate } from "lodash"
 import { DateTime } from "luxon"
+
+function isDateValue(value: unknown): value is Date {
+  return value instanceof Date && !Number.isNaN(value.getTime())
+}
 
 class DateTimeUtils {
   static getCurrentDateTimeString(): string {
@@ -56,7 +59,7 @@ class DateTimeUtils {
 
   static toJsDate(d: any): Date | null {
     if (!d) return null
-    if (isDate(d)) return d
+    if (isDateValue(d)) return d
     if (typeof d === "string") return DateTime.fromISO(d).toJSDate()
     throw Error("unknown date object")
   }

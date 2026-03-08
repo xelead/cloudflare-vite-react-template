@@ -16,7 +16,7 @@ export default async function projectsGetById(
 		return ApiRes.validationError("Project id is required.");
 	}
 
-	const project = getProjectById(project_id);
+	const project = await getProjectById(project_id);
 	if (!project) {
 		return ApiRes.error("Project not found.", 404, "not_found");
 	}

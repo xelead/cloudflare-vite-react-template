@@ -1,5 +1,5 @@
-import {FilterExpr} from "src/common/crud/filter_expr.ts";
-import {IPagingQuery} from "src/common/crud/api_crud";
+import type { FilterExpr } from "@src/common/crud/filter_expr.ts";
+import type { IPagingQuery } from "@src/common/crud/api_crud.d.ts";
 
 export type EntityFieldStorageDataType = "string" | "float" | "int" | "int64" | "boolean" | "timestamp" | "double" | "double[]"
 export type EntityFieldJsonDataTypes = "string" | "boolean" | "number" | "array"

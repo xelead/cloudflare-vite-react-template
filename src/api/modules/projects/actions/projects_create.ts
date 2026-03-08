@@ -42,7 +42,7 @@ export default async function projectsCreate(
 		return ApiRes.validationError("Missing required fields for project creation.");
 	}
 
-	const project = createProject({
+	const project = await createProject({
 		id: request_data.id?.trim(),
 		name,
 		summary,

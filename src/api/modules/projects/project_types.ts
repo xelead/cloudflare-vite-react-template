@@ -12,4 +12,9 @@ export interface IProject {
     "deleted_at"?: string | null
 }
 
-export interface IProjectList { list: Array<IProject> }
+export interface IProjectList {
+	list: Array<IProject>
+	total?: number
+	pageNumber?: number
+	pageSize?: number
+}

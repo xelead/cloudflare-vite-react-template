@@ -46,14 +46,23 @@ export default async function projectsPatch(
 		return ApiRes.validationError("Year must be an integer.");
 	}
 
-	const updated_project = updateProject(project_id, {
-		name: request_data.name?.trim(),
-		summary: request_data.summary?.trim(),
-		year: next_year,
-		status: request_data.status?.trim(),
-		stack,
-		link: request_data.link?.trim() || undefined,
-	});
+	const patch: {
+		name?: string;
+		summary?: string;
+		year?: number;
+		status?: string;
+		stack?: string[];
+		link?: string;
+	} = {};
+
+	if (request_data.name !== undefined) patch.name = request_data.name?.trim();
+	if (request_data.summary !== undefined) patch.summary = request_data.summary?.trim();
+	if (request_data.year !== undefined) patch.year = next_year;
+	if (request_data.status !== undefined) patch.status = request_data.status?.trim();
+	if (request_data.stack !== undefined) patch.stack = stack;
+	if (request_data.link !== undefined) patch.link = request_data.link?.trim() || undefined;
+
+	const updated_project = await updateProject(project_id, patch);
 
 	if (!updated_project) {
 		return ApiRes.error("Project not found.", 404, "not_found");

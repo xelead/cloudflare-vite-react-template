@@ -1,6 +1,53 @@
-import type { Db } from "mongodb"
-import MongoDbRepo from "../../src/api/fw/db/mongo_repo";
-import {connectToCoreDb} from "../../src/api/fw/db/mongo_db_connection";
+import type { Db } from "mongodb";
+import fs from "node:fs";
+import path from "node:path";
+import MongoDbRepo from "../../src/api/fw/db/mongo_repo.ts";
+import { connectToCoreDb } from "../../src/api/db/coredb.ts";
+
+let did_load_env = false;
+
+function parseEnvContent(content: string): Record<string, string> {
+	const result: Record<string, string> = {};
+	const lines = content.split(/\r?\n/);
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+		if (!trimmed || trimmed.startsWith("#")) continue;
+		const eq_index = trimmed.indexOf("=");
+		if (eq_index <= 0) continue;
+
+		const key = trimmed.slice(0, eq_index).trim();
+		let value = trimmed.slice(eq_index + 1).trim();
+		if (
+			(value.startsWith("\"") && value.endsWith("\"")) ||
+			(value.startsWith("'") && value.endsWith("'"))
+		) {
+			value = value.slice(1, -1);
+		}
+		result[key] = value;
+	}
+
+	return result;
+}
+
+function loadNodeEnvFilesOnce() {
+	if (did_load_env) return;
+	did_load_env = true;
+
+	const process_env = process.env;
+	const env_files = [".dev.vars", ".env"];
+
+	for (const env_file of env_files) {
+		const full_path = path.resolve(process.cwd(), env_file);
+		if (!fs.existsSync(full_path)) continue;
+		const parsed = parseEnvContent(fs.readFileSync(full_path, "utf-8"));
+		for (const [key, value] of Object.entries(parsed)) {
+			if (!process_env[key] || process_env[key]?.trim() === "") {
+				process_env[key] = value;
+			}
+		}
+	}
+}
 
 /**
  * Checks that there is not duplicated (.id) fields in the list
@@ -9,16 +56,16 @@ import {connectToCoreDb} from "../../src/api/fw/db/mongo_db_connection";
  * @param collectionName - collection name
  */
 function validateIds(collectionName: string, rows: any[]) {
-  const ids: string[] = []
-  for (let i = 0; i < rows.length; i += 1) {
-    const row = rows[i]
-    if (!row) continue
-    if (!row.id) throw Error(`No id defined for row with this data ${JSON.stringify(row)}`)
+	const ids: string[] = [];
+	for (let i = 0; i < rows.length; i += 1) {
+		const row = rows[i];
+		if (!row) continue;
+		if (!row.id) throw new Error(`No id defined for row with this data ${JSON.stringify(row)}`);
 
-    if (ids.includes(String(rows[i].id))) throw Error(`${collectionName} has duplicated id: ${row.id}`)
+		if (ids.includes(String(rows[i].id))) throw new Error(`${collectionName} has duplicated id: ${row.id}`);
 
-    ids.push(rows[i].id)
-  }
+		ids.push(rows[i].id);
+	}
 }
 
 /**
@@ -28,26 +75,24 @@ function validateIds(collectionName: string, rows: any[]) {
  * @param collectionName
  */
 async function populateDb(db: Db, rows: any[], collectionName: string) {
-  const repo = new MongoDbRepo(db, collectionName)
+	const repo = new MongoDbRepo(db, collectionName);
+	const promises: Promise<unknown>[] = [];
 
-  const promises = []
-  for (let i = 0; i < rows.length; i += 1) {
-    const row = rows[i]
-    if (!row) continue
+	for (let i = 0; i < rows.length; i += 1) {
+		const row = rows[i];
+		if (!row) continue;
+		promises.push(repo.upsert(row));
+	}
 
-    promises.push(repo.upsert(row))
-  }
-
-  await Promise.all(promises)
-
-  // console.log(`${collectionName} completed.`);
+	await Promise.all(promises);
 }
 
 async function populateCoreDb(rows: any[], collectionName: string) {
-  console.log(`populating ${collectionName}`)
-  validateIds(collectionName, rows)
-  const db = await connectToCoreDb()
-  await populateDb(db, rows, collectionName)
+	loadNodeEnvFilesOnce();
+	console.log(`Populating ${collectionName}`);
+	validateIds(collectionName, rows);
+	const db = await connectToCoreDb();
+	await populateDb(db, rows, collectionName);
 }
 
-export { populateCoreDb }
+export { populateCoreDb };

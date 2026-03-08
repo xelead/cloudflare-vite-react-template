@@ -33,6 +33,7 @@
 		"eslint-plugin-react-hooks": "7.0.1",
 		"eslint-plugin-react-refresh": "0.4.24",
 		"globals": "16.5.0",
+		"patch-package": "^8.0.1",
 		"typescript": "5.8.3",
 		"typescript-eslint": "8.48.0",
 		"vite": "^6.0.0",
@@ -47,9 +48,10 @@
 		"dev": "vite --host",
 		"format": "corepack pnpm dlx prettier@3.6.2 --write . --use-tabs --single-quote false --trailing-comma all --semi true",
 		"lint": "eslint .",
+		"postinstall": "patch-package",
 		"preview": "npm run build && vite preview",
-		"db-clean": "npx tsx ./tools/db/cleanDb.ts",
-		"db-seed": "npx tsx ./tools/db/seeds/populate_all_seed_data.ts"
+		"db-clean": "npx tsx ./tools/db/clean_db.ts",
+		"db-seed": "npx tsx ./tools/db/populate_all_seed_data.ts"
 	},
 	"type": "module"
 }

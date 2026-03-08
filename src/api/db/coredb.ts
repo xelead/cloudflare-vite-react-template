@@ -1,37 +1,38 @@
-import type { Db } from "mongodb"
-import { MongoClient } from "mongodb"
-import {getEnvString} from "@src/api/fw/config/env_helpers.ts";
+import type { Db, MongoClient } from "mongodb";
+import { getEnvString } from "../fw/config/env_helpers.ts";
 
 declare global {
-    var dbCoreCachedClient: MongoClient | undefined
-    var dbCoreCachedDb: Db | undefined
+	var dbCoreCachedClient: MongoClient | undefined;
+	var dbCoreCachedDb: Db | undefined;
 }
 
 const connectToDatabase = async (url: string, dbName: string): Promise<Db> => {
-    if (globalThis.dbCoreCachedDb) {
-        return globalThis.dbCoreCachedDb
-    }
+	if (!url) throw new Error("Missing XE_CORE_DB_URL.");
+	if (!dbName) throw new Error("Missing XE_CORE_DB_NAME.");
 
-    if (!globalThis.dbCoreCachedClient) {
-        console.log("connecting to MongoDb")
-        globalThis.dbCoreCachedClient = await MongoClient.connect(url, {})
-        console.log("MongoDb connection successful")
-    }
+	if (globalThis.dbCoreCachedDb) {
+		return globalThis.dbCoreCachedDb;
+	}
 
-    globalThis.dbCoreCachedDb = globalThis.dbCoreCachedClient.db(dbName)
-    return globalThis.dbCoreCachedDb
-}
+	if (!globalThis.dbCoreCachedClient) {
+		const { MongoClient } = await import("mongodb");
+		globalThis.dbCoreCachedClient = new MongoClient(url);
+		await globalThis.dbCoreCachedClient.connect();
+	}
+
+	globalThis.dbCoreCachedDb = globalThis.dbCoreCachedClient.db(dbName);
+	return globalThis.dbCoreCachedDb;
+};
 
 export async function disconnectCoreClient() {
-    if (!globalThis.dbCoreCachedClient) return
-    const force = true
-    await globalThis.dbCoreCachedClient.close(force)
+	if (!globalThis.dbCoreCachedClient) return;
+	await globalThis.dbCoreCachedClient.close();
+	globalThis.dbCoreCachedClient = undefined;
+	globalThis.dbCoreCachedDb = undefined;
 }
 
 export const connectToCoreDb = async (): Promise<Db> => {
-    // noinspection UnnecessaryLocalVariableJS
-    const url = await getEnvString("XE_CORE_DB_URL")
-    const dbName = await getEnvString("XE_CORE_DB_NAME")
-    const connection = await connectToDatabase(url, dbName)
-    return connection
-}
+	const url = await getEnvString("XE_CORE_DB_URL");
+	const dbName = await getEnvString("XE_CORE_DB_NAME");
+	return connectToDatabase(url, dbName);
+};

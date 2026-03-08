@@ -15,7 +15,7 @@ export default async function projectsSoftDelete(
 		return ApiRes.validationError("Project id is required.");
 	}
 
-	const deleted_project = softDeleteProject(project_id);
+	const deleted_project = await softDeleteProject(project_id);
 	if (!deleted_project) {
 		return ApiRes.error("Project not found.", 404, "not_found");
 	}

@@ -1,4 +1,6 @@
 
+import type { IEntitySortColumn } from "@src/common/crud/entity_interfaces.ts";
+
 export interface ApiCrud<T> {
   count: () => Promise<number>
   create: (data: Record<string, any>) => Promise<T | null>

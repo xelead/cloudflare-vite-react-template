@@ -5,12 +5,25 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 
 export default defineConfig({
 	plugins: [react(), cloudflare()],
+	cacheDir: "node_modules/.vite_cf_dev",
+	optimizeDeps: {
+		exclude: ["mongodb"],
+		include: ["punycode", "punycode/", "tr46", "whatwg-url"],
+	},
+	ssr: {
+		external: ["mongodb"],
+		optimizeDeps: {
+			exclude: ["mongodb"],
+			include: ["punycode", "punycode/", "tr46", "whatwg-url"],
+		},
+	},
 	server: {
 		allowedHosts: ["remotepc1.xelead.com"],
 	},
 	resolve: {
 		alias: {
 			"@src": fileURLToPath(new URL("./src", import.meta.url)),
+			"punycode/": "punycode/punycode.js",
 		},
 	},
 });

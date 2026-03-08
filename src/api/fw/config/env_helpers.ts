@@ -1,46 +1,48 @@
+import type { EnvKey } from "@src/api/config/config_types.ts";
 
+type EnvValue = string | { get?: () => Promise<string> | string } | undefined;
+type EnvSource = Record<string, EnvValue>;
+let worker_env_cache: EnvSource = {};
 
-
-const getWorkerEnv = (): NodeJS.ProcessEnv => {
-	try {
-		return getCloudflareContext().env as NodeJS.ProcessEnv;
-	} catch {
-		console.log("Worker environment not available, falling back to process.env");
-		return process.env;
-	}
+export const setWorkerEnv = (env: EnvSource) => {
+	worker_env_cache = env;
 };
 
-const toEnvString = async (value: unknown): Promise<string> => {
-	if (typeof value === "string") return value;
-	if (value && typeof value === "object" && "get" in value) {
-		const getter = (value as { get?: () => Promise<string> | string }).get;
-		if (typeof getter === "function") {
-			return await getter();
-		}
+const getWorkerEnv = (): EnvSource => worker_env_cache;
+
+const toEnvString = async (value: EnvValue): Promise<string> => {
+	if (typeof value === "string") return value.trim();
+	if (!value || typeof value !== "object") return "";
+
+	if ("get" in value && typeof value.get === "function") {
+		const resolved = await value.get();
+		return typeof resolved === "string" ? resolved.trim() : "";
 	}
+
 	return "";
 };
 
 export const getEnvString = async (key: EnvKey): Promise<string> => {
-	const workerEnv = getWorkerEnv();
-	return await toEnvString(workerEnv?.[key]);
+	const process_env = (globalThis as { process?: { env?: EnvSource } }).process?.env ?? {};
+	const process_value = await toEnvString(process_env[key]);
+	if (process_value) return process_value;
+
+	const worker_env = getWorkerEnv();
+	return toEnvString(worker_env[key]);
 };
 
-
-export const getEnvNumber = async (key: Parameters<typeof getEnvString>[0]) => {
+export const getEnvNumber = async (key: EnvKey): Promise<number | undefined> => {
 	const raw = await getEnvString(key);
 	if (!raw) return undefined;
 	const parsed = Number(raw);
-	if (!Number.isFinite(parsed)) return undefined;
-	return parsed;
+	return Number.isFinite(parsed) ? parsed : undefined;
 };
 
-export const getEnvBoolean = async (key: Parameters<typeof getEnvString>[0]) => {
-	const raw = (await getEnvString(key)).trim();
+export const getEnvBoolean = async (key: EnvKey): Promise<boolean | undefined> => {
+	const raw = (await getEnvString(key)).toLowerCase();
 	if (!raw) return undefined;
-	const normalized = raw.toLowerCase();
-	if (["true", "1", "yes", "on"].includes(normalized)) return true;
-	if (["false", "0", "no", "off"].includes(normalized)) return false;
+	if (["true", "1", "yes", "on"].includes(raw)) return true;
+	if (["false", "0", "no", "off"].includes(raw)) return false;
 	return undefined;
 };
 

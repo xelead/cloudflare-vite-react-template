@@ -1,17 +1,24 @@
-import { type IProject } from "@src/api/modules/projects/project_types.ts";
-import projects_seed from "@src/api/modules/projects/projects.json" assert { type: "json" };
+import type { IProject } from "@src/api/modules/projects/project_types.ts";
 
-type ProjectCreateInput = {
+const COLLECTION_NAME = "projects";
+
+type ProjectQuery = {
 	id?: string;
-	name: string;
-	summary: string;
-	year: number;
-	status: string;
-	stack: string[];
-	link?: string;
+	status?: string;
+	name?: string;
+	deleted_at?: string | null;
 };
 
-type ProjectPatchInput = Partial<Omit<ProjectCreateInput, "id">>;
+type ProjectPatchInput = Partial<Omit<IProject, "id" | "created_at">>;
+
+type ListProjectsInput = {
+	pageNumber?: number;
+	pageSize?: number;
+	search?: string;
+	status?: string;
+};
+
+const now = () => new Date().toISOString();
 
 function slugify(value: string): string {
 	return value
@@ -21,100 +28,220 @@ function slugify(value: string): string {
 		.replace(/^-+|-+$/g, "");
 }
 
-const now = () => new Date().toISOString();
-
-const projects_state: IProject[] = (projects_seed as Array<IProject>).map((project) => {
-	const timestamp = now();
-	return {
-		...project,
-		created_at: project.created_at ?? timestamp,
-		updated_at: project.updated_at ?? timestamp,
-		deleted_at: project.deleted_at ?? null,
-	};
-});
-
-function getProjectIndex(project_id: string): number {
-	return projects_state.findIndex((project) => project.id === project_id);
-}
-
-export function getAllProjects(): IProject[] {
-	return projects_state.filter((project) => !project.deleted_at);
-}
-
-export function getProjectById(project_id: string): IProject | null {
-	return projects_state.find((project) => project.id === project_id && !project.deleted_at) ?? null;
-}
-
-export function createProject(input: ProjectCreateInput): IProject {
+function normalizeProjectCreateInput(input: {
+	id?: string;
+	name: string;
+	summary: string;
+	year: number;
+	status: string;
+	stack: string[];
+	link?: string;
+}): IProject {
 	const timestamp = now();
 	const generated_id = slugify(input.id?.trim() || input.name);
 	const project_id = generated_id.length > 0 ? generated_id : `project-${Date.now()}`;
 
-	const duplicate = projects_state.some((project) => project.id === project_id && !project.deleted_at);
-	if (duplicate) {
-		throw {
-			code: 409,
-			errorType: "conflict",
-			message: "Project id already exists.",
-		};
-	}
-
-	const project: IProject = {
+	return {
 		id: project_id,
-		name: input.name,
-		summary: input.summary,
+		name: input.name.trim(),
+		summary: input.summary.trim(),
 		year: input.year,
-		status: input.status,
-		stack: input.stack,
-		link: input.link,
+		status: input.status.trim(),
+		stack: input.stack.map((item) => item.trim()).filter(Boolean),
+		link: input.link?.trim() || undefined,
 		created_at: timestamp,
 		updated_at: timestamp,
 		deleted_at: null,
 	};
+}
 
-	projects_state.push(project);
+const fallback_projects: IProject[] = [
+	{
+		id: "aurora-dashboard",
+		name: "Aurora Ops Dashboard",
+		summary: "Operational cockpit for real-time fleet health and status alerts.",
+		year: 2025,
+		status: "Active",
+		stack: ["Hono", "React", "Cloudflare Workers"],
+		link: "https://example.com/aurora",
+		created_at: now(),
+		updated_at: now(),
+		deleted_at: null,
+	},
+	{
+		id: "horizon-payments",
+		name: "Horizon Payments",
+		summary: "Unified billing experience with automated invoice reconciliation.",
+		year: 2024,
+		status: "Scaling",
+		stack: ["TypeScript", "Vite", "Postgres"],
+		link: "https://example.com/horizon",
+		created_at: now(),
+		updated_at: now(),
+		deleted_at: null,
+	},
+	{
+		id: "atlas-field",
+		name: "Atlas Field Ops",
+		summary: "Mobile-ready field toolkit for tracking service tasks.",
+		year: 2024,
+		status: "Pilot",
+		stack: ["React", "Edge APIs", "Workflow"],
+		link: "https://example.com/atlas",
+		created_at: now(),
+		updated_at: now(),
+		deleted_at: null,
+	},
+	{
+		id: "lumen-portal",
+		name: "Lumen Partner Portal",
+		summary: "Self-serve onboarding and reporting for partner teams.",
+		year: 2023,
+		status: "Launched",
+		stack: ["Hono", "Cloudflare KV", "Analytics"],
+		created_at: now(),
+		updated_at: now(),
+		deleted_at: null,
+	},
+];
+
+let mongo_unavailable_logged = false;
+
+async function getProjectsRepo() {
+	try {
+		const [{ connectToCoreDb }, { default: MongoDbRepo }] = await Promise.all([
+			import("@src/api/db/coredb.ts"),
+			import("@src/api/fw/db/mongo_repo.ts"),
+		]);
+		const db = await connectToCoreDb();
+		return new MongoDbRepo<ProjectQuery, IProject, ProjectPatchInput, keyof IProject>(
+			db,
+			COLLECTION_NAME,
+		);
+	} catch (error) {
+		if (!mongo_unavailable_logged) {
+			mongo_unavailable_logged = true;
+			console.warn("MongoDB unavailable in this runtime. Falling back to in-memory projects store.", error);
+		}
+		return null;
+	}
+}
+
+function getFallbackActiveProjects() {
+	return fallback_projects.filter((item) => !item.deleted_at);
+}
+
+export async function getAllProjects(input?: ListProjectsInput): Promise<{ list: IProject[]; total: number }> {
+	const page_number = Math.max(1, Number(input?.pageNumber) || 1);
+	const page_size = Math.max(1, Number(input?.pageSize) || 10);
+	const repo = await getProjectsRepo();
+
+	let items = repo ? await repo.find({} as ProjectQuery) : getFallbackActiveProjects();
+
+	if (input?.search) {
+		const search = input.search.trim().toLowerCase();
+		items = items.filter(
+			(item) =>
+				item.name.toLowerCase().includes(search) || item.summary.toLowerCase().includes(search),
+		);
+	}
+
+	if (input?.status) {
+		items = items.filter((item) => item.status === input.status);
+	}
+
+	items = items.sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
+	const total = items.length;
+	const start = (page_number - 1) * page_size;
+	const end = start + page_size;
+	return { list: items.slice(start, end), total };
+}
+
+export async function getProjectById(project_id: string): Promise<IProject | null> {
+	const repo = await getProjectsRepo();
+	if (repo) return repo.findOne({ id: project_id });
+	return getFallbackActiveProjects().find((item) => item.id === project_id) ?? null;
+}
+
+export async function createProject(input: {
+	id?: string;
+	name: string;
+	summary: string;
+	year: number;
+	status: string;
+	stack: string[];
+	link?: string;
+}): Promise<IProject> {
+	const project = normalizeProjectCreateInput(input);
+	const repo = await getProjectsRepo();
+
+	if (repo) {
+		const duplicate = await repo.findOne({ id: project.id });
+		if (duplicate) {
+			throw { code: 409, errorType: "conflict", message: "Project id already exists." };
+		}
+		const result = await repo.create(project);
+		if (!result.isSuccessful) {
+			throw { code: 500, errorType: "db_error", message: "Failed to create project." };
+		}
+		return project;
+	}
+
+	const duplicate = fallback_projects.some((item) => item.id === project.id && !item.deleted_at);
+	if (duplicate) {
+		throw { code: 409, errorType: "conflict", message: "Project id already exists." };
+	}
+	fallback_projects.push(project);
 	return project;
 }
 
-export function updateProject(project_id: string, patch: ProjectPatchInput): IProject | null {
-	const project_index = getProjectIndex(project_id);
-	if (project_index < 0) {
-		return null;
+export async function updateProject(project_id: string, patch: ProjectPatchInput): Promise<IProject | null> {
+	const repo = await getProjectsRepo();
+	const update_data: ProjectPatchInput = { ...patch, updated_at: now() };
+
+	if ("link" in patch && !patch.link) update_data.link = undefined;
+	for (const key of Object.keys(update_data) as Array<keyof ProjectPatchInput>) {
+		if (update_data[key] === undefined) delete update_data[key];
 	}
 
-	const current = projects_state[project_index];
-	if (current.deleted_at) {
-		return null;
+	if (repo) {
+		const current = await repo.findOne({ id: project_id });
+		if (!current) return null;
+		const update_result = await repo.updateOne({ id: project_id }, update_data);
+		if (!update_result.isSuccessful) {
+			throw { code: 500, errorType: "db_error", message: "Failed to update project." };
+		}
+		return repo.findOne({ id: project_id });
 	}
 
-	const next_value: IProject = {
-		...current,
-		...patch,
-		link: patch.link !== undefined ? patch.link : current.link,
-		updated_at: now(),
-	};
-
-	projects_state[project_index] = next_value;
-	return next_value;
+	const index = fallback_projects.findIndex((item) => item.id === project_id && !item.deleted_at);
+	if (index < 0) return null;
+	fallback_projects[index] = { ...fallback_projects[index], ...update_data };
+	return fallback_projects[index] ?? null;
 }
 
-export function softDeleteProject(project_id: string): IProject | null {
-	const project_index = getProjectIndex(project_id);
-	if (project_index < 0) {
-		return null;
+export async function softDeleteProject(project_id: string): Promise<IProject | null> {
+	const timestamp = now();
+	const repo = await getProjectsRepo();
+
+	if (repo) {
+		const current = await repo.findOne({ id: project_id });
+		if (!current) return null;
+		const update_result = await repo.updateOne(
+			{ id: project_id },
+			{ deleted_at: timestamp, updated_at: timestamp },
+		);
+		if (!update_result.isSuccessful) {
+			throw { code: 500, errorType: "db_error", message: "Failed to delete project." };
+		}
+		return { ...current, deleted_at: timestamp, updated_at: timestamp };
 	}
 
-	const current = projects_state[project_index];
-	if (current.deleted_at) {
-		return null;
-	}
-
-	const deleted_project: IProject = {
-		...current,
-		deleted_at: now(),
-		updated_at: now(),
-	};
-
-	projects_state[project_index] = deleted_project;
-	return deleted_project;
+	const index = fallback_projects.findIndex((item) => item.id === project_id && !item.deleted_at);
+	if (index < 0) return null;
+	const current = fallback_projects[index];
+	if (!current) return null;
+	const next = { ...current, deleted_at: timestamp, updated_at: timestamp };
+	fallback_projects[index] = next;
+	return next;
 }

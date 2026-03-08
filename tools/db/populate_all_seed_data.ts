@@ -1,60 +1,109 @@
-import type { Db } from "mongodb"
-import path from "path"
-import url from "url"
-import {connectToCoreDb, disconnectCoreClient} from "../../src/api/db/coredb";
-import DateTimeUtils from "../../src/common/utils/date_time_utils"
-import {getAllFilesAsync} from "../../src/api/fw/utils/file_utils"
+import type { Db } from "mongodb";
+import fs from "node:fs";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { connectToCoreDb, disconnectCoreClient } from "../../src/api/db/coredb.ts";
+import DateTimeUtils from "../../src/common/utils/date_time_utils.ts";
 
+type SeedModule = {
+	default?: { up?: (db: Db) => Promise<void> | void };
+	up?: (db: Db) => Promise<void> | void;
+};
 
-*/ Gets all migration files by their name */
-async function getFileNames(): Promise<string[]> {
-  const migrationFilesPath = path.resolve(path.join(__dirname, "core"))
-  const files = await getAllFilesAsync(migrationFilesPath)
-  const filePaths = files.map((f) => f.path)
-  return filePaths.sort() // making sure the files are sorted before running migrations
+function loadNodeEnvFiles() {
+	const env_files = [".dev.vars", ".env"];
+	for (const env_file of env_files) {
+		const full_path = path.resolve(process.cwd(), env_file);
+		if (!fs.existsSync(full_path)) continue;
+
+		const lines = fs.readFileSync(full_path, "utf-8").split(/\r?\n/);
+		for (const line of lines) {
+			const trimmed = line.trim();
+			if (!trimmed || trimmed.startsWith("#")) continue;
+			const eq_index = trimmed.indexOf("=");
+			if (eq_index <= 0) continue;
+
+			const key = trimmed.slice(0, eq_index).trim();
+			let value = trimmed.slice(eq_index + 1).trim();
+			if (
+				(value.startsWith("\"") && value.endsWith("\"")) ||
+				(value.startsWith("'") && value.endsWith("'"))
+			) {
+				value = value.slice(1, -1);
+			}
+
+			if (!process.env[key] || process.env[key]?.trim() === "") {
+				process.env[key] = value;
+			}
+		}
+	}
+}
+
+async function getSeedFileNames(): Promise<string[]> {
+	const seed_files_path = path.resolve(process.cwd(), "test_data", "seeds");
+	if (!fs.existsSync(seed_files_path)) return [];
+
+	const entries = await fs.promises.readdir(seed_files_path, { withFileTypes: true });
+	const file_paths = entries
+		.filter((entry) => entry.isFile())
+		.map((entry) => path.join(seed_files_path, entry.name))
+		.filter((file_path) => file_path.endsWith(".ts") || file_path.endsWith(".js"));
+
+	return file_paths.sort((a, b) => a.localeCompare(b));
 }
 
 async function loadAndRunSeedFile(db: Db, filePath: string) {
-  // import module needs files to start with "file://" and not C:\
-  console.log(`Running seed: ${filePath}`)
-  const fileUrl = url.pathToFileURL(filePath).toString()
-  const m = await import(fileUrl)
-  await m.default(db)
+	console.log(`Running seed: ${filePath}`);
+	const module_url = pathToFileURL(filePath).toString();
+	const seed_module = (await import(module_url)) as SeedModule;
+
+	const up =
+		typeof seed_module.default?.up === "function"
+			? seed_module.default.up
+			: typeof seed_module.up === "function"
+				? seed_module.up
+				: null;
+
+	if (!up) {
+		throw new Error(`Seed file does not export an 'up' function: ${filePath}`);
+	}
+
+	await up(db);
 }
 
 async function populate_all_seed_data() {
-  const fileNames = await getFileNames()
-  if (fileNames.length <= 0) throw Error("No seed file found.")
+	loadNodeEnvFiles();
+	const file_names = await getSeedFileNames();
+	if (file_names.length <= 0) throw new Error("No seed file found.");
 
-  const db: Db = await connectToCoreDb()
+	const db: Db = await connectToCoreDb();
+	const started_at = DateTimeUtils.getCurrentDateTimeUtc();
+	let is_successful = false;
 
-  let isSuccessful = false
-  const startedAt = DateTimeUtils.getCurrentDateTimeUtc()
-  try {
-    for (let i = 0; i < fileNames.length; i++) {
-      const filePath = fileNames[i] || ""
-
-      await loadAndRunSeedFile(db, filePath)
-    }
-
-    isSuccessful = true
-  } finally {
-    try {
-      console.log("Seeds completed", { isSuccessful, startedAt, endedAt: DateTimeUtils.getCurrentDateTimeUtc() })
-      // await endMigrations(startedAt, isSuccessful)
-    } finally {
-      await disconnectCoreClient()
-    }
-  }
+	try {
+		for (let i = 0; i < file_names.length; i++) {
+			const file_path = file_names[i];
+			if (!file_path) continue;
+			await loadAndRunSeedFile(db, file_path);
+		}
+		is_successful = true;
+	} finally {
+		console.log("Seeds completed", {
+			isSuccessful: is_successful,
+			startedAt: started_at,
+			endedAt: DateTimeUtils.getCurrentDateTimeUtc(),
+		});
+		await disconnectCoreClient();
+	}
 }
 
 populate_all_seed_data()
-  .then(() => {
-    console.log("seed data population completed!")
-    process.exit(0)
-  })
-  .catch((e) => {
-    console.log("seed data population failed!")
-    console.error(e)
-    process.exit(1)
-  })
+	.then(() => {
+		console.log("Seed data population completed.");
+		process.exit(0);
+	})
+	.catch((e) => {
+		console.log("Seed data population failed.");
+		console.error(e);
+		process.exit(1);
+	});

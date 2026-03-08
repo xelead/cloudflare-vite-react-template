@@ -8,7 +8,7 @@ export class FileNameUtils {
    */
   static getFileExt(fileName: string): string {
     if (!fileName) return ""
-    const dotIndex = fileName.indexOf(".")
+    const dotIndex = fileName.lastIndexOf(".")
     if (dotIndex === -1) return ""
     return fileName.substring(dotIndex + 1)
   }
@@ -34,7 +34,7 @@ export class FileNameUtils {
     if (filePath.indexOf("\\") > 0) {
       filePath = filePath.replaceAll("\\", "/")
     }
-    return getFileNameFromUrl(filePath)
+    return FileNameUtils.getFileNameFromUrl(filePath)
   }
 
 }
