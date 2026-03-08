@@ -32,7 +32,7 @@ function Home() {
 				<div className="hero-copy">
 					<h1>Vite + React + Hono + Cloudflare</h1>
 					<p>
-						A clean template for shipping full-stack apps with a Worker API and
+						A clean template for shipping full-stack apps with an API backend and
 						Vite-powered UI.
 					</p>
 				</div>
@@ -50,8 +50,8 @@ function Home() {
 					</button>
 				</div>
 				<div className="card">
-					<h2>Worker API</h2>
-					<p>Fetches a value from the Worker running your API routes.</p>
+					<h2>API</h2>
+					<p>Fetches a value from the API backend running your routes.</p>
 					<button
 						onClick={() => {
 							fetch("/api/")

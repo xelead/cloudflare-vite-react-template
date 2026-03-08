@@ -47,7 +47,7 @@ function ProjectsPage() {
 			<section className="hero hero-slim">
 				<div className="hero-copy">
 					<h1>Projects</h1>
-					<p>Shipped work tracked from the Worker-powered JSON API.</p>
+					<p>Shipped work tracked from the API-powered JSON endpoint.</p>
 				</div>
 			</section>
 

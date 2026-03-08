@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { register_dynamic_routes } from "@src/worker/route_registry.ts";
+import { register_dynamic_routes } from "@src/api/route_registry.ts";
 
 const app = new Hono<{ Bindings: Env }>();
 

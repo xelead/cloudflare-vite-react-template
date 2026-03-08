@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 
 - `src/react-app/`: React app source (routes in `pages/`, state in `state/`, shared types in `types/`).
-- `src/worker/`: Cloudflare Worker + Hono server entry (`index.ts`) and server-side data in `data/`.
+- `src/api/`: Cloudflare API + Hono server entry (`index.ts`) and server-side data in `data/`.
 - `public/`: Static assets copied as-is.
 - `dist/`: Production build output (generated).
 - Key config: `vite.config.ts`, `wrangler.json`, `tsconfig*.json`, `eslint.config.js`.
@@ -39,12 +39,12 @@
 - PRs should include a clear description of changes and rationale.
 - Link issues or tickets when applicable.
 - Include screenshots for UI changes (desktop + mobile if relevant).
-- Call out config or worker changes (e.g., `wrangler.json`, SSR behavior).
+- Call out config or API changes (e.g., `wrangler.json`, SSR behavior).
 
 ## Security & Configuration Tips
 
 - Avoid committing secrets; use Wrangler/Cloudflare bindings for environment values.
-- Validate worker-side inputs in `src/worker/index.ts` for any new API routes.
+- Validate API-side inputs in `src/api/index.ts` for any new API routes.
 
 ## Agent-Specific Instructions
 

@@ -3,7 +3,7 @@
 // Runtime types generated with workerd@1.20251217.0 2025-10-08 nodejs_compat
 declare namespace Cloudflare {
 	interface GlobalProps {
-		mainModule: typeof import("./src/worker/index");
+		mainModule: typeof import("./src/api/index");
 	}
 	interface Env {}
 }
@@ -462,16 +462,16 @@ declare const self: ServiceWorkerGlobalScope;
 /**
  * The Web Crypto API provides a set of low-level functions for common cryptographic tasks.
  * The Workers runtime implements the full surface of this API, but with some differences in
- * the [supported algorithms](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/#supported-algorithms)
+ * the [supported algorithms](https://developers.cloudflare.com/apis/runtime-apis/web-crypto/#supported-algorithms)
  * compared to those implemented in most browsers.
  *
- * [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/)
+ * [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/web-crypto/)
  */
 declare const crypto: Crypto;
 /**
  * The Cache API allows fine grained control of reading and writing from the Cloudflare global network cache.
  *
- * [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/)
+ * [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/cache/)
  */
 declare const caches: CacheStorage;
 declare const scheduler: Scheduler;
@@ -479,7 +479,7 @@ declare const scheduler: Scheduler;
  * The Workers runtime supports a subset of the Performance API, used to measure timing and performance,
  * as well as timing of subrequests and other operations.
  *
- * [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/performance/)
+ * [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/performance/)
  */
 declare const performance: Performance;
 declare const Cloudflare: Cloudflare;
@@ -1133,7 +1133,7 @@ interface FileOptions {
 /**
  * The Cache API allows fine grained control of reading and writing from the Cloudflare global network cache.
  *
- * [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/)
+ * [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/cache/)
  */
 declare abstract class CacheStorage {
 	/**
@@ -1147,20 +1147,20 @@ declare abstract class CacheStorage {
 /**
  * The Cache API allows fine grained control of reading and writing from the Cloudflare global network cache.
  *
- * [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/)
+ * [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/cache/)
  */
 declare abstract class Cache {
-	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/#delete) */
+	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/cache/#delete) */
 	delete(
 		request: RequestInfo | URL,
 		options?: CacheQueryOptions,
 	): Promise<boolean>;
-	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/#match) */
+	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/cache/#match) */
 	match(
 		request: RequestInfo | URL,
 		options?: CacheQueryOptions,
 	): Promise<Response | undefined>;
-	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/#put) */
+	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/cache/#put) */
 	put(request: RequestInfo | URL, response: Response): Promise<void>;
 }
 interface CacheQueryOptions {
@@ -1169,10 +1169,10 @@ interface CacheQueryOptions {
 /**
  * The Web Crypto API provides a set of low-level functions for common cryptographic tasks.
  * The Workers runtime implements the full surface of this API, but with some differences in
- * the [supported algorithms](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/#supported-algorithms)
+ * the [supported algorithms](https://developers.cloudflare.com/apis/runtime-apis/web-crypto/#supported-algorithms)
  * compared to those implemented in most browsers.
  *
- * [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/)
+ * [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/web-crypto/)
  */
 declare abstract class Crypto {
 	/**
@@ -3868,12 +3868,12 @@ interface WorkerLoaderWorkerCode {
  * The Workers runtime supports a subset of the Performance API, used to measure timing and performance,
  * as well as timing of subrequests and other operations.
  *
- * [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/performance/)
+ * [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/performance/)
  */
 declare abstract class Performance {
-	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/performance/#performancetimeorigin) */
+	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/performance/#performancetimeorigin) */
 	get timeOrigin(): number;
-	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/performance/#performancenow) */
+	/* [Cloudflare Docs Reference](https://developers.cloudflare.com/apis/runtime-apis/performance/#performancenow) */
 	now(): number;
 }
 type AiImageClassificationInput = {
@@ -9320,7 +9320,7 @@ interface AiModels {
 type AiOptions = {
 	/**
 	 * Send requests as an asynchronous batch job, only works for supported models
-	 * https://developers.cloudflare.com/workers-ai/features/batch-api
+	 * https://developers.cloudflare.com/apis-ai/features/batch-api
 	 */
 	queueRequest?: boolean;
 	/**
@@ -11259,7 +11259,7 @@ interface RateLimitOutcome {
 interface RateLimit {
 	/**
 	 * Rate limit a request based on the provided options.
-	 * @see https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
+	 * @see https://developers.cloudflare.com/apis/runtime-apis/bindings/rate-limit/
 	 * @returns A promise that resolves with the outcome of the rate limit.
 	 */
 	limit(options: RateLimitOptions): Promise<RateLimitOutcome>;

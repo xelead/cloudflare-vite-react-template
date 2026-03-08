@@ -35,18 +35,18 @@ function PeoplePage() {
 			<title>People | Cloudflare Vite React</title>
 			<meta
 				name="description"
-				content="Explore people data loaded from dynamic Worker routes."
+				content="Explore people data loaded from dynamic API routes."
 			/>
 			<meta property="og:title" content="People | Cloudflare Vite React" />
 			<meta
 				property="og:description"
-				content="Explore people data loaded from dynamic Worker routes."
+				content="Explore people data loaded from dynamic API routes."
 			/>
 			<meta property="og:type" content="website" />
 			<section className="hero hero-slim">
 				<div className="hero-copy">
 					<h1>People</h1>
-					<p>Team members served from the Worker-powered JSON API.</p>
+					<p>Team members served from the API-powered JSON endpoint.</p>
 				</div>
 			</section>
 

@@ -1,4 +1,4 @@
-# People Worker Module
+# People API Module
 
 Provides `people` data and route handlers for:
 

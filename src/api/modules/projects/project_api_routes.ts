@@ -1,4 +1,4 @@
-import projects from "@src/worker/modules/projects/projects.json" assert { type: "json" };
+import projects from "@src/api/modules/projects/projects.json" assert { type: "json" };
 import { render } from "@src/react-app/ssr/render.tsx";
 import { IApp } from "@src/interfaces/api.ts";
 

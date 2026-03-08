@@ -1,4 +1,4 @@
-import people from "@src/worker/modules/people/people.json" assert { type: "json" };
+import people from "@src/api/modules/people/people.json" assert { type: "json" };
 import { IApp } from "@src/interfaces/api.ts";
 
 export class PeopleApiRoutes {

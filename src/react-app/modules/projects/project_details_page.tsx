@@ -72,7 +72,7 @@ function ProjectDetailsPage() {
 				<div className="project-header">
 					<div>
 						<h2>Project Overview</h2>
-						<p>Status and stack details from Worker-backed API data.</p>
+						<p>Status and stack details from API-backed data.</p>
 					</div>
 					<span className="pill">{project.status}</span>
 				</div>

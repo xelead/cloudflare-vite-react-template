@@ -1,18 +1,18 @@
-import projects from "@src/worker/modules/projects/projects.json" assert { type: "json" };
+import people from "@src/api/modules/people/people.json" assert { type: "json" };
 import { render } from "@src/react-app/ssr/render.tsx";
 import { IApp } from "@src/interfaces/api.ts";
 
-export class ProjectSsrRoutes {
+export class PeopleSsrRoutes {
 	private app: IApp;
 
 	constructor(app: IApp) {
 		this.app = app;
 	}
+
 	register_routes() {
 		const app = this.app;
-		// SSR
-		app.get("/projects", (c) => {
-			const { html } = render(new URL(c.req.url).pathname, { projects, people: [] });
+		app.get("/people", (c) => {
+			const { html } = render(new URL(c.req.url).pathname, { projects: [], people });
 			return c.html(html);
 		});
 	}
