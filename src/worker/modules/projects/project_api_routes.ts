@@ -1,7 +1,7 @@
 
-import projects from "./projects.json" assert { type: "json" };
-import {render} from "../../../react-app/ssr/render.tsx";
-import {IApp} from "../../../interfaces/api.ts";
+import projects from "@src/worker/modules/projects/projects.json" assert { type: "json" };
+import {render} from "@src/react-app/ssr/render.tsx";
+import {IApp} from "@src/interfaces/api.ts";
 
 export class ProjectApiRoutes {
     private app: IApp;

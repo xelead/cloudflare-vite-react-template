@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useProjectsData } from "./projects_data.tsx";
-import type { ProjectsResponse } from "./projects_types.ts";
+import { useProjectsData } from "@src/react-app/modules/projects/projects_data.tsx";
+import type { ProjectsResponse } from "@src/react-app/modules/projects/projects_types.ts";
 
 function ProjectsPage() {
 	const { data, setData } = useProjectsData();

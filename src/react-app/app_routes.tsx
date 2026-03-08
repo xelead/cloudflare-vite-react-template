@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom";
-import Home from "./pages/Home";
-import ProjectsPage from "./modules/projects/index.tsx";
+import Home from "@src/react-app/pages/Home";
+import ProjectsPage from "@src/react-app/modules/projects/index.tsx";
 
 export default function AppRoutes() {
 	return (

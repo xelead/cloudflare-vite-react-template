@@ -1,10 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import "./index.css";
-import App from "./App";
-import { ProjectsDataProvider } from "./modules/projects/projects_data.tsx";
-import type { ProjectsResponse } from "./modules/projects/projects_types.tsx";
+import "@src/react-app/index.css";
+import App from "@src/react-app/App";
+import { ProjectsDataProvider } from "@src/react-app/modules/projects/projects_data.tsx";
+import type { ProjectsResponse } from "@src/react-app/modules/projects/projects_types.tsx";
 
 declare global {
 	interface Window {
