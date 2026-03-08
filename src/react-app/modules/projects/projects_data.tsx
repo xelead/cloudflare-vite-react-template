@@ -7,7 +7,9 @@ type ProjectsDataContextValue = {
 	setData: Dispatch<SetStateAction<ProjectsResponse>>;
 };
 
-const ProjectsDataContext = createContext<ProjectsDataContextValue | null>(null);
+const ProjectsDataContext = createContext<ProjectsDataContextValue | null>(
+	null,
+);
 
 export function ProjectsDataProvider({
 	data,

@@ -33,7 +33,7 @@ function Home() {
 					<h1>Vite + React + Hono + Cloudflare</h1>
 					<p>
 						A clean template for shipping full-stack apps with a Worker API and
-						 Vite-powered UI.
+						Vite-powered UI.
 					</p>
 				</div>
 			</section>

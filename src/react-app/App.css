@@ -115,7 +115,9 @@
 	background: var(--surface);
 	border: 1px solid var(--line);
 	box-shadow: var(--shadow);
-	transition: transform 200ms ease, filter 300ms ease;
+	transition:
+		transform 200ms ease,
+		filter 300ms ease;
 }
 
 .logo:hover {
@@ -227,7 +229,9 @@ button {
 	background-color: var(--ink);
 	color: white;
 	cursor: pointer;
-	transition: transform 150ms ease, box-shadow 150ms ease;
+	transition:
+		transform 150ms ease,
+		box-shadow 150ms ease;
 }
 
 button:hover {

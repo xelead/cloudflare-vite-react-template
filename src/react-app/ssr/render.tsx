@@ -51,7 +51,7 @@ export function render(url: string, data: ProjectsResponse): RenderResult {
 					<App />
 				</StaticRouter>
 			</ProjectsDataProvider>
-		</Document>
+		</Document>,
 	);
 
 	return {
