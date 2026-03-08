@@ -6,7 +6,10 @@ export interface IProject {
     "year": number
     "status": string
     "stack": Array<string>
-    "link": string
+    "link"?: string
+    "created_at"?: string
+    "updated_at"?: string
+    "deleted_at"?: string | null
 }
 
 export interface IProjectList { list: Array<IProject> }

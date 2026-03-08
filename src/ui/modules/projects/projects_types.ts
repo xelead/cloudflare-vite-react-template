@@ -6,6 +6,9 @@ export type Project = {
 	status: string;
 	stack: string[];
 	link?: string;
+	created_at?: string;
+	updated_at?: string;
+	deleted_at?: string | null;
 };
 
 export type ApiResult<T> = {
@@ -22,6 +25,15 @@ export type ProjectsApiData = {
 
 export type ProjectsApiResponse = ApiResult<ProjectsApiData>;
 export type ProjectApiResponse = ApiResult<Project>;
+
+export type ProjectPatchPayload = {
+	name?: string;
+	summary?: string;
+	year?: number;
+	status?: string;
+	stack?: string[];
+	link?: string;
+};
 
 export type ProjectsResponse = {
 	projects: Project[];

@@ -19,5 +19,9 @@ export class ProjectSsrRoutes {
 			const { html } = render(new URL(c.req.url).pathname, { projects, people: [] });
 			return c.html(html);
 		});
+		app.get("/projects/:project_id/edit", (c) => {
+			const { html } = render(new URL(c.req.url).pathname, { projects, people: [] });
+			return c.html(html);
+		});
 	}
 }

@@ -115,6 +115,9 @@ function ProjectDetailsPage() {
 					<Link className="project-link" to="/projects">
 						Back to projects
 					</Link>
+					<Link className="project-link" to={`/projects/${project.id}/edit`}>
+						Edit project
+					</Link>
 					{project.link && (
 						<a className="project-link" href={project.link}>
 							Visit project
