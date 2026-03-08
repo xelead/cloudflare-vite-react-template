@@ -6,9 +6,25 @@ declare global {
 	var dbCoreCachedDb: Db | undefined;
 }
 
-const connectToDatabase = async (url: string, dbName: string): Promise<Db> => {
+function getDbNameFromUrl(url: string): string {
+	let parsed: URL;
+	try {
+		parsed = new URL(url);
+	} catch {
+		throw new Error("Invalid XE_CORE_DB_URL.");
+	}
+
+	const pathname = parsed.pathname.replace(/^\/+/, "").trim();
+	if (!pathname) {
+		throw new Error("XE_CORE_DB_URL must include a database name in its path.");
+	}
+
+	return pathname.split("/")[0] || "";
+}
+
+const connectToDatabase = async (url: string): Promise<Db> => {
 	if (!url) throw new Error("Missing XE_CORE_DB_URL.");
-	if (!dbName) throw new Error("Missing XE_CORE_DB_NAME.");
+	const dbName = getDbNameFromUrl(url);
 
 	if (globalThis.dbCoreCachedDb) {
 		return globalThis.dbCoreCachedDb;
@@ -33,6 +49,5 @@ export async function disconnectCoreClient() {
 
 export const connectToCoreDb = async (): Promise<Db> => {
 	const url = await getEnvString("XE_CORE_DB_URL");
-	const dbName = await getEnvString("XE_CORE_DB_NAME");
-	return connectToDatabase(url, dbName);
+	return connectToDatabase(url);
 };

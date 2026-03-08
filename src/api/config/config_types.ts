@@ -1,7 +1,6 @@
 
 export type EnvKey =
     | "XE_CORE_DB_URL"
-    | "XE_CORE_DB_NAME"
     | "AWS_REGION"
     | "AWS_ACCESS_KEY_ID"
     | "AWS_SECRET_ACCESS_KEY"
