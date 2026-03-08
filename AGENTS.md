@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-- `src/react-app/`: React app source (routes in `pages/`, state in `state/`, shared types in `types/`).
+- `src/ui/`: React app source (routes in `pages/`, state in `state/`, shared types in `types/`).
 - `src/api/`: Cloudflare API + Hono server entry (`index.ts`) and server-side data in `data/`.
 - `public/`: Static assets copied as-is.
 - `dist/`: Production build output (generated).
@@ -23,10 +23,10 @@
 ## Coding Style & Naming Conventions
 
 - TypeScript + React with ES modules.
-- Indentation uses tabs (see `src/react-app/main.tsx`).
+- Indentation uses tabs (see `src/ui/main.tsx`).
 - Use double quotes and semicolons to match existing files.
 - Filenames: `kebab-case` for folders, `PascalCase` for components (e.g., `ProjectsPage.tsx`).
-- Prefer colocating page components under `src/react-app/pages/`.
+- Prefer colocating page components under `src/ui/pages/`.
 
 ## Testing Guidelines
 

@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
-import "@src/react-app/App.css";
-import AppRoutes from "@src/react-app/app_routes";
+import "@src/ui/App.css";
+import AppRoutes from "@src/ui/app_routes";
 
 function App() {
 	return (

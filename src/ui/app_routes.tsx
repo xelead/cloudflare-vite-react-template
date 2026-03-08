@@ -1,8 +1,8 @@
 import { Route, Routes } from "react-router-dom";
-import Home from "@src/react-app/pages/Home";
-import PeoplePage from "@src/react-app/modules/people/index.tsx";
-import ProjectsPage from "@src/react-app/modules/projects/index.tsx";
-import ProjectDetailsPage from "@src/react-app/modules/projects/project_details_page.tsx";
+import Home from "@src/ui/pages/Home";
+import PeoplePage from "@src/ui/modules/people/index.tsx";
+import ProjectsPage from "@src/ui/modules/projects/index.tsx";
+import ProjectDetailsPage from "@src/ui/modules/projects/project_details_page.tsx";
 
 const app_routes = [
 	{ path: "/", element: <Home /> },

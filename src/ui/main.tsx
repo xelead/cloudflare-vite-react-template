@@ -1,11 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import "@src/react-app/index.css";
-import App from "@src/react-app/App";
-import { PeopleDataProvider } from "@src/react-app/modules/people/people_data.tsx";
-import { ProjectsDataProvider } from "@src/react-app/modules/projects/projects_data.tsx";
-import type { AppInitialData } from "@src/react-app/types/app_initial_data.ts";
+import "@src/ui/index.css";
+import App from "@src/ui/App";
+import { PeopleDataProvider } from "@src/ui/modules/people/people_data.tsx";
+import { ProjectsDataProvider } from "@src/ui/modules/projects/projects_data.tsx";
+import type { AppInitialData } from "@src/ui/types/app_initial_data.ts";
 
 declare global {
 	interface Window {

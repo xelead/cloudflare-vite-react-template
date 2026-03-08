@@ -1,6 +1,6 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { createContext, useContext, useState } from "react";
-import type { PeopleResponse } from "@src/react-app/modules/people/people_types.ts";
+import type { PeopleResponse } from "@src/ui/modules/people/people_types.ts";
 
 type PeopleDataContextValue = {
 	data: PeopleResponse;

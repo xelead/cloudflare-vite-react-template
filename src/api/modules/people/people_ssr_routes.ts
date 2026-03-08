@@ -1,5 +1,5 @@
 import people from "@src/api/modules/people/people.json" assert { type: "json" };
-import { render } from "@src/react-app/ssr/render.tsx";
+import { render } from "@src/ui/ssr/render.tsx";
 import { IApp } from "@src/interfaces/api.ts";
 
 export class PeopleSsrRoutes {

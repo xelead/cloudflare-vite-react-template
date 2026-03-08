@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useProjectsData } from "@src/react-app/modules/projects/projects_data.tsx";
-import type { ProjectsResponse } from "@src/react-app/modules/projects/projects_types.ts";
+import { useProjectsData } from "@src/ui/modules/projects/projects_data.tsx";
+import type { ProjectsResponse } from "@src/ui/modules/projects/projects_types.ts";
 
 function ProjectsPage() {
 	const { data, setData } = useProjectsData();

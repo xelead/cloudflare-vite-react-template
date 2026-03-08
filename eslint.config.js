@@ -32,7 +32,7 @@ export default tseslint.config(
 		},
 	},
 	{
-		files: ["src/react-app/ssr/render.tsx"],
+		files: ["src/ui/ssr/render.tsx"],
 		rules: {
 			"react-refresh/only-export-components": "off",
 		},

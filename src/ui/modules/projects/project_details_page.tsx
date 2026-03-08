@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useProjectsData } from "@src/react-app/modules/projects/projects_data.tsx";
-import type { Project, ProjectsResponse } from "@src/react-app/modules/projects/projects_types.ts";
+import { useProjectsData } from "@src/ui/modules/projects/projects_data.tsx";
+import type { Project, ProjectsResponse } from "@src/ui/modules/projects/projects_types.ts";
 
 function ProjectDetailsPage() {
 	const { project_id } = useParams();

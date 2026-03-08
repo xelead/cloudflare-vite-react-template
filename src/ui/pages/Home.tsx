@@ -1,8 +1,8 @@
 import { useState } from "react";
-import reactLogo from "@src/react-app/assets/react.svg";
+import reactLogo from "@src/ui/assets/react.svg";
 import viteLogo from "/vite.svg";
-import cloudflareLogo from "@src/react-app/assets/Cloudflare_Logo.svg";
-import honoLogo from "@src/react-app/assets/hono.svg";
+import cloudflareLogo from "@src/ui/assets/Cloudflare_Logo.svg";
+import honoLogo from "@src/ui/assets/hono.svg";
 
 function Home() {
 	const [count, setCount] = useState(0);

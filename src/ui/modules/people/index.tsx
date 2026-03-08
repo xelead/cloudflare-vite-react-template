@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { usePeopleData } from "@src/react-app/modules/people/people_data.tsx";
-import type { PeopleResponse } from "@src/react-app/modules/people/people_types.ts";
+import { usePeopleData } from "@src/ui/modules/people/people_data.tsx";
+import type { PeopleResponse } from "@src/ui/modules/people/people_types.ts";
 
 function PeoplePage() {
 	const { data, setData } = usePeopleData();
