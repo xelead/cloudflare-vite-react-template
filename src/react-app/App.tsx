@@ -12,6 +12,7 @@ function App() {
 						Home
 					</NavLink>
 					<NavLink to="/projects">Projects</NavLink>
+					<NavLink to="/people">People</NavLink>
 				</nav>
 			</header>
 			<main className="content">

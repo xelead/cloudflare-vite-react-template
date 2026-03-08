@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import Home from "@src/react-app/pages/Home";
+import PeoplePage from "@src/react-app/modules/people/index.tsx";
 import ProjectsPage from "@src/react-app/modules/projects/index.tsx";
 
 export default function AppRoutes() {
@@ -7,6 +8,7 @@ export default function AppRoutes() {
 		<Routes>
 			<Route path="/" element={<Home />} />
 			<Route path="/projects" element={<ProjectsPage />} />
+			<Route path="/people" element={<PeoplePage />} />
 		</Routes>
 	);
 }

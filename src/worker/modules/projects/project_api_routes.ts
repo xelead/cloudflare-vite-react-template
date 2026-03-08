@@ -16,7 +16,7 @@ export class ProjectApiRoutes {
 
 		// SSR
 		app.get("/projects", (c) => {
-			const { html } = render(new URL(c.req.url).pathname, { projects });
+			const { html } = render(new URL(c.req.url).pathname, { projects, people: [] });
 			return c.html(html);
 		});
 	}
