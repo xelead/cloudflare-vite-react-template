@@ -8,6 +8,20 @@ export type Project = {
 	link?: string;
 };
 
+export type ApiResult<T> = {
+	code?: number;
+	errorType?: string;
+	hasError: boolean;
+	message?: string;
+	data?: T;
+};
+
+export type ProjectsApiData = {
+	list: Project[];
+};
+
+export type ProjectsApiResponse = ApiResult<ProjectsApiData>;
+
 export type ProjectsResponse = {
 	projects: Project[];
 };

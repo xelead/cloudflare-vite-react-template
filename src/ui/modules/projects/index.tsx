@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useProjectsData } from "@src/ui/modules/projects/projects_data.tsx";
-import type { ProjectsResponse } from "@src/ui/modules/projects/projects_types.ts";
+import type { ProjectsApiResponse } from "@src/ui/modules/projects/projects_types.ts";
 
 function ProjectsPage() {
 	const { data, setData } = useProjectsData();
@@ -15,15 +15,16 @@ function ProjectsPage() {
 
 		setHasFetched(true);
 		fetch("/api/projects")
-			.then((res) => {
-				if (!res.ok) {
-					throw new Error("Failed to load projects.");
+			.then(async (res) => {
+				const payload = (await res.json()) as ProjectsApiResponse;
+				if (!res.ok || payload.hasError) {
+					throw new Error(payload.message ?? "Failed to load projects.");
 				}
-				return res.json() as Promise<ProjectsResponse>;
+				return payload;
 			})
 			.then((payload) => {
-				if (Array.isArray(payload.projects)) {
-					setData({ projects: payload.projects });
+				if (Array.isArray(payload.data?.list)) {
+					setData({ projects: payload.data.list });
 				}
 			})
 			.catch(() => {
