@@ -1,6 +1,7 @@
 import projects from "@src/api/modules/projects/projects.json" assert { type: "json" };
 import { render } from "@src/ui/ssr/render.tsx";
-import { IApp } from "@src/interfaces/api.ts";
+import {IApp} from "@src/api/fw/api_app_types.ts";
+import {safeApi} from "@src/api/fw/routes/safe_api.ts";
 
 export class ProjectApiRoutes {
 	private app: IApp;
@@ -16,8 +17,10 @@ export class ProjectApiRoutes {
 
 		// SSR
 		app.get("/projects", (c) => {
-			const { html } = render(new URL(c.req.url).pathname, { projects, people: [] });
-			return c.html(html);
+			safeApi(c,  c,  () => {
+				const { html } = render(new URL(c.req.url).pathname, { projects, people: [] });
+				return c.html(html);
+			})
 		});
 	}
 }
