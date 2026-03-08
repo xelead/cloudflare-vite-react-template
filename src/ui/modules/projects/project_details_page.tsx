@@ -1,44 +1,61 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useProjectsData } from "@src/ui/modules/projects/projects_data.tsx";
-import type { Project, ProjectsApiResponse } from "@src/ui/modules/projects/projects_types.ts";
+import type { Project, ProjectApiResponse } from "@src/ui/modules/projects/projects_types.ts";
 
 function ProjectDetailsPage() {
 	const { project_id } = useParams();
-	const { data, setData } = useProjectsData();
-	const [hasFetched, setHasFetched] = useState(false);
+	const [project, setProject] = useState<Project | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	useEffect(() => {
-		if (!project_id || data.projects.length > 0 || hasFetched) {
+		if (!project_id) {
+			setProject(null);
+			setErrorMessage("Project id is missing.");
 			return;
 		}
 
-		setHasFetched(true);
-		fetch("/api/projects")
+		setIsLoading(true);
+		setErrorMessage(null);
+		fetch(`/api/projects/${encodeURIComponent(project_id)}`)
 			.then(async (res) => {
-				const payload = (await res.json()) as ProjectsApiResponse;
+				const payload = (await res.json()) as ProjectApiResponse;
 				if (!res.ok || payload.hasError) {
-					throw new Error(payload.message ?? "Failed to load projects.");
+					throw new Error(payload.message ?? "Failed to load project.");
 				}
 				return payload;
 			})
 			.then((payload) => {
-				if (Array.isArray(payload.data?.list)) {
-					setData({ projects: payload.data.list });
+				if (payload.data) {
+					setProject(payload.data);
+					return;
 				}
+
+				setProject(null);
+				setErrorMessage("Project not found.");
 			})
-			.catch(() => {
-				// Keep not-found fallback on fetch failure.
+			.catch((error: unknown) => {
+				setProject(null);
+				setErrorMessage(error instanceof Error ? error.message : "Failed to load project.");
+			})
+			.finally(() => {
+				setIsLoading(false);
 			});
-	}, [data.projects.length, hasFetched, project_id, setData]);
+	}, [project_id]);
 
-	const project = useMemo<Project | undefined>(() => {
-		if (!project_id) {
-			return undefined;
-		}
-
-		return data.projects.find((item) => item.id === project_id);
-	}, [data.projects, project_id]);
+	if (isLoading) {
+		return (
+			<div className="page">
+				<title>Loading Project | Cloudflare Vite React</title>
+				<section className="hero hero-slim">
+					<div className="hero-copy">
+						<h1>Loading Project</h1>
+						<p>Fetching project details from API.</p>
+					</div>
+				</section>
+			</div>
+		);
+	}
 
 	if (!project) {
 		return (
@@ -47,7 +64,7 @@ function ProjectDetailsPage() {
 				<section className="hero hero-slim">
 					<div className="hero-copy">
 						<h1>Project Not Found</h1>
-						<p>The requested project could not be found.</p>
+						<p>{errorMessage ?? "The requested project could not be found."}</p>
 					</div>
 				</section>
 				<div className="status-card">

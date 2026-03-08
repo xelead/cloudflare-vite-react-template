@@ -21,6 +21,7 @@ export type ProjectsApiData = {
 };
 
 export type ProjectsApiResponse = ApiResult<ProjectsApiData>;
+export type ProjectApiResponse = ApiResult<Project>;
 
 export type ProjectsResponse = {
 	projects: Project[];
