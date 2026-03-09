@@ -1,11 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useProjectsData } from "@src/ui/modules/projects/projects_data.tsx";
+import {
+	getUserFriendlyErrorMessage,
+	readApiPayload,
+} from "@src/common/crud/api_response_utils.ts";
+import { use_project_entity_meta } from "@src/ui/modules/projects/use_project_entity_meta.ts";
 import type { Project, ProjectApiResponse } from "@src/ui/modules/projects/projects_types.ts";
+
+function render_field_value(value: unknown): string {
+	if (Array.isArray(value)) {
+		return value.map((item) => String(item)).join(" · ");
+	}
+
+	if (value === null || value === undefined) {
+		return "";
+	}
+
+	return String(value);
+}
 
 function ProjectDetailsPage() {
 	const { project_id } = useParams();
 	const { data } = useProjectsData();
+	const { meta, list_fields } = use_project_entity_meta();
 	const initialProject = useMemo<Project | null>(() => {
 		if (!project_id) {
 			return null;
@@ -32,11 +50,7 @@ function ProjectDetailsPage() {
 		setErrorMessage(null);
 		fetch(`/api/projects/${encodeURIComponent(project_id)}`)
 			.then(async (res) => {
-				const payload = (await res.json()) as ProjectApiResponse;
-				if (!res.ok || payload.hasError) {
-					throw new Error(payload.message ?? "Failed to load project.");
-				}
-				return payload;
+				return readApiPayload<ProjectApiResponse>(res, "Failed to load project.");
 			})
 			.then((payload) => {
 				if (payload.data) {
@@ -49,7 +63,7 @@ function ProjectDetailsPage() {
 			})
 			.catch((error: unknown) => {
 				setProject(null);
-				setErrorMessage(error instanceof Error ? error.message : "Failed to load project.");
+				setErrorMessage(getUserFriendlyErrorMessage(error, "Failed to load project."));
 			})
 			.finally(() => {
 				setIsLoading(false);
@@ -89,28 +103,32 @@ function ProjectDetailsPage() {
 		);
 	}
 
+	const title_field_name = meta?.entityInfo.displayNameFieldName ?? "name";
+	const project_title = render_field_value(project[title_field_name as keyof Project]);
+
 	return (
 		<div className="page">
-			<title>{project.name} | Cloudflare Vite React</title>
-			<meta name="description" content={project.summary} />
+			<title>{`${project_title} | Cloudflare Vite React`}</title>
+			<meta name="description" content={project_title} />
 			<section className="hero hero-slim">
 				<div className="hero-copy">
-					<h1>{project.name}</h1>
-					<p>{project.summary}</p>
+					<h1>{project_title}</h1>
+					<p>Dynamic details rendered from project entity metadata.</p>
 				</div>
 			</section>
 			<article className="project-card">
 				<div className="project-header">
 					<div>
 						<h2>Project Overview</h2>
-						<p>Status and stack details from API-backed data.</p>
+						<p>Field values mapped from `entityInfo.fields`.</p>
 					</div>
-					<span className="pill">{project.status}</span>
 				</div>
-				<div className="project-meta">
-					<span>{project.year}</span>
-					<span>{project.stack.join(" · ")}</span>
-				</div>
+				{list_fields.map((field) => (
+					<div className="project-meta" key={field.name}>
+						<span>{field.label}</span>
+						<span>{render_field_value(project[field.name as keyof Project])}</span>
+					</div>
+				))}
 				<div className="project-meta">
 					<Link className="project-link" to="/projects">
 						Back to projects
@@ -118,7 +136,7 @@ function ProjectDetailsPage() {
 					<Link className="project-link" to={`/projects/${project.id}/edit`}>
 						Edit project
 					</Link>
-					{project.link && (
+					{typeof project.link === "string" && project.link.length > 0 && (
 						<a className="project-link" href={project.link}>
 							Visit project
 						</a>

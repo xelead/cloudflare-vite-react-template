@@ -4,6 +4,9 @@
 
 - `src/ui/`: React app source (routes in `pages/`, state in `state/`, shared types in `types/`).
 - `src/api/`: Cloudflare API + Hono server entry (`index.ts`) and server-side data in `data/`.
+- `src/api/modules/user_accounts/`: JSON-driven entity field definitions for `userAccounts`.
+- `src/api/modules/projects/project_en.ts` + `project_fields.json`: Dynamic project entity model and field definitions.
+- `src/common/crud/entity_field_definition_loader.ts`: Converts JSON field definitions into `IEntityFieldInfo` maps.
 - `public/`: Static assets copied as-is.
 - `dist/`: Production build output (generated).
 - Key config: `vite.config.ts`, `wrangler.json`, `tsconfig*.json`, `eslint.config.js`.

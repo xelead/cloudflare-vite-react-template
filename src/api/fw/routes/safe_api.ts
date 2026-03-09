@@ -1,13 +1,15 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { Db } from "mongodb";
 
 import { ApiRes, type IApiRequestContext, type IApiResult } from "@src/interfaces/route_types.ts";
+import type { IApiVariables } from "@src/api/fw/api_app_types.ts";
 
 class ApiRequestContext implements IApiRequestContext {
-	private c: Context<{ Bindings: Env }>;
+	private c: Context<{ Bindings: Env; Variables: IApiVariables }>;
 	private merged_request_data: Record<string, unknown> | null = null;
 
-	constructor(c: Context<{ Bindings: Env }>) {
+	constructor(c: Context<{ Bindings: Env; Variables: IApiVariables }>) {
 		this.c = c;
 	}
 
@@ -34,6 +36,19 @@ class ApiRequestContext implements IApiRequestContext {
 
 	async getUserIdAsync(): Promise<string | null> {
 		return this.c.req.header("x-user-id") ?? null;
+	}
+
+	async getCoreDbAsync(): Promise<Db> {
+		const db = this.c.get("coreDb");
+		if (!db) {
+			throw {
+				code: 500,
+				errorType: "db_unavailable",
+				message: "Database is not available for this request.",
+			};
+		}
+
+		return db;
 	}
 
 	async getRequestDataAsync<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T> {
@@ -150,7 +165,7 @@ function getErrorType(error: unknown, code: number): string {
 }
 
 export async function safeApi<T>(
-	c: Context<{ Bindings: Env }>,
+	c: Context<{ Bindings: Env; Variables: IApiVariables }>,
 	handlerFn: (requestContext: IApiRequestContext) => Promise<IApiResult<T>> | IApiResult<T>,
 ) {
 	try {

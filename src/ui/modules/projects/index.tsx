@@ -1,19 +1,38 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+	getUserFriendlyErrorMessage,
+	readApiPayload,
+} from "@src/common/crud/api_response_utils.ts";
 import { useProjectsData } from "@src/ui/modules/projects/projects_data.tsx";
+import { use_project_entity_meta } from "@src/ui/modules/projects/use_project_entity_meta.ts";
 import type {
 	Project,
 	ProjectApiResponse,
 	ProjectsApiResponse,
 } from "@src/ui/modules/projects/projects_types.ts";
 
+function render_field_value(value: unknown): string {
+	if (Array.isArray(value)) {
+		return value.map((item) => String(item)).join(" · ");
+	}
+
+	if (value === null || value === undefined) {
+		return "";
+	}
+
+	return String(value);
+}
+
 function ProjectsPage() {
 	const { data, setData } = useProjectsData();
 	const { projects } = data;
+	const { meta, list_fields, is_loading: is_meta_loading } = use_project_entity_meta();
 	const [hasFetched, setHasFetched] = useState(false);
 	const [deleteCandidate, setDeleteCandidate] = useState<Project | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const title_field_name = meta?.entityInfo.displayNameFieldName ?? "name";
 
 	useEffect(() => {
 		if (projects.length > 0 || hasFetched) {
@@ -23,11 +42,7 @@ function ProjectsPage() {
 		setHasFetched(true);
 		fetch("/api/projects")
 			.then(async (res) => {
-				const payload = (await res.json()) as ProjectsApiResponse;
-				if (!res.ok || payload.hasError) {
-					throw new Error(payload.message ?? "Failed to load projects.");
-				}
-				return payload;
+				return readApiPayload<ProjectsApiResponse>(res, "Failed to load projects.");
 			})
 			.then((payload) => {
 				if (Array.isArray(payload.data?.list)) {
@@ -54,12 +69,16 @@ function ProjectsPage() {
 			<meta property="og:type" content="website" />
 			<section className="hero hero-slim">
 				<div className="hero-copy">
-					<h1>Projects</h1>
+					<h1>{meta?.entityInfo.entityTitle ?? "Projects"}</h1>
 					<p>Shipped work tracked from the API-powered JSON endpoint.</p>
 				</div>
 			</section>
 
-			{projects.length === 0 && (
+			{is_meta_loading && (
+				<div className="status-card">Loading project field metadata...</div>
+			)}
+
+			{!is_meta_loading && projects.length === 0 && (
 				<div className="status-card">No projects available yet.</div>
 			)}
 
@@ -68,16 +87,14 @@ function ProjectsPage() {
 					{projects.map((project) => (
 						<article key={project.id} className="project-card">
 							<div className="project-header">
-								<div>
-									<h2>{project.name}</h2>
-									<p>{project.summary}</p>
+								<h2>{render_field_value(project[title_field_name as keyof Project])}</h2>
+							</div>
+							{list_fields.map((field) => (
+								<div className="project-meta" key={`${project.id}-${field.name}`}>
+									<span>{field.label}</span>
+									<span>{render_field_value(project[field.name as keyof Project])}</span>
 								</div>
-								<span className="pill">{project.status}</span>
-							</div>
-							<div className="project-meta">
-								<span>{project.year}</span>
-								<span>{project.stack.join(" · ")}</span>
-							</div>
+							))}
 							<div className="project-meta">
 								<Link className="project-link" to={`/projects/${project.id}`}>
 									View details
@@ -95,7 +112,7 @@ function ProjectsPage() {
 								>
 									Delete
 								</button>
-								{project.link && (
+								{typeof project.link === "string" && project.link.length > 0 && (
 									<a className="project-link" href={project.link}>
 										View project
 									</a>
@@ -110,7 +127,11 @@ function ProjectsPage() {
 				<dialog className="confirm-dialog" open>
 					<h2>Delete Project?</h2>
 					<p>
-						Are you sure you want to delete <strong>{deleteCandidate.name}</strong>?
+						Are you sure you want to delete{" "}
+						<strong>
+							{render_field_value(deleteCandidate[title_field_name as keyof Project])}
+						</strong>
+						?
 					</p>
 					{errorMessage && <p className="status-card status-error">{errorMessage}</p>}
 					<div className="dialog-actions">
@@ -125,10 +146,10 @@ function ProjectsPage() {
 									method: "DELETE",
 								})
 									.then(async (res) => {
-										const payload = (await res.json()) as ProjectApiResponse;
-										if (!res.ok || payload.hasError) {
-											throw new Error(payload.message ?? "Failed to delete project.");
-										}
+										await readApiPayload<ProjectApiResponse>(
+											res,
+											"Failed to delete project.",
+										);
 									})
 									.then(() => {
 										setData((current) => ({
@@ -138,7 +159,7 @@ function ProjectsPage() {
 									})
 									.catch((error: unknown) => {
 										setErrorMessage(
-											error instanceof Error ? error.message : "Failed to delete project.",
+											getUserFriendlyErrorMessage(error, "Failed to delete project."),
 										);
 									})
 									.finally(() => {

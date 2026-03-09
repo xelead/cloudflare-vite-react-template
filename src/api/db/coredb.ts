@@ -1,12 +1,7 @@
 import type { Db, MongoClient } from "mongodb";
 import { getEnvString } from "../fw/config/env_helpers.ts";
 
-declare global {
-	var dbCoreCachedClient: MongoClient | undefined;
-	var dbCoreCachedDb: Db | undefined;
-}
-
-function getDbNameFromUrl(url: string): string {
+function get_db_name_from_url(url: string): string {
 	let parsed: URL;
 	try {
 		parsed = new URL(url);
@@ -22,32 +17,59 @@ function getDbNameFromUrl(url: string): string {
 	return pathname.split("/")[0] || "";
 }
 
-const connectToDatabase = async (url: string): Promise<Db> => {
-	if (!url) throw new Error("Missing XE_CORE_DB_URL.");
-	const dbName = getDbNameFromUrl(url);
-
-	if (globalThis.dbCoreCachedDb) {
-		return globalThis.dbCoreCachedDb;
+function normalize_mongo_url(url: string): string {
+	let parsed: URL;
+	try {
+		parsed = new URL(url);
+	} catch {
+		return url;
 	}
 
-	if (!globalThis.dbCoreCachedClient) {
-		const { MongoClient } = await import("mongodb");
-		globalThis.dbCoreCachedClient = new MongoClient(url);
-		await globalThis.dbCoreCachedClient.connect();
+	if (parsed.hostname === "localhost") {
+		parsed.hostname = "127.0.0.1";
 	}
 
-	globalThis.dbCoreCachedDb = globalThis.dbCoreCachedClient.db(dbName);
-	return globalThis.dbCoreCachedDb;
-};
+	if (!parsed.searchParams.has("directConnection")) {
+		parsed.searchParams.set("directConnection", "true");
+	}
 
-export async function disconnectCoreClient() {
-	if (!globalThis.dbCoreCachedClient) return;
-	await globalThis.dbCoreCachedClient.close();
-	globalThis.dbCoreCachedClient = undefined;
-	globalThis.dbCoreCachedDb = undefined;
+	return parsed.toString();
 }
 
-export const connectToCoreDb = async (): Promise<Db> => {
+function create_mongo_client(url: string): Promise<MongoClient> {
+	return import("mongodb").then(({ MongoClient }) => {
+		const client_options = {
+			serverSelectionTimeoutMS: 10000,
+			connectTimeoutMS: 10000,
+			socketTimeoutMS: 15000,
+			maxPoolSize: 5,
+			minPoolSize: 0,
+		};
+		return new MongoClient(url, client_options as never);
+	});
+}
+
+export type CoreDbSession = {
+	db: Db;
+	close: () => Promise<void>;
+};
+
+const connect_to_database = async (url: string): Promise<CoreDbSession> => {
+	if (!url) throw new Error("Missing XE_CORE_DB_URL.");
+	const normalized_url = normalize_mongo_url(url);
+	const db_name = get_db_name_from_url(normalized_url);
+	const client = await create_mongo_client(normalized_url);
+	await client.connect();
+
+	return {
+		db: client.db(db_name),
+		close: async () => {
+			await client.close();
+		},
+	};
+};
+
+export const connectToCoreDbSession = async (): Promise<CoreDbSession> => {
 	const url = await getEnvString("XE_CORE_DB_URL");
-	return connectToDatabase(url);
+	return connect_to_database(url);
 };

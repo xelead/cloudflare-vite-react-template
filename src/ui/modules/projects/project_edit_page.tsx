@@ -1,50 +1,152 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+	getUserFriendlyErrorMessage,
+	readApiPayload,
+} from "@src/common/crud/api_response_utils.ts";
 import { useProjectsData } from "@src/ui/modules/projects/projects_data.tsx";
+import { use_project_entity_meta } from "@src/ui/modules/projects/use_project_entity_meta.ts";
 import type {
 	Project,
 	ProjectApiResponse,
+	ProjectFieldMeta,
 	ProjectPatchPayload,
 } from "@src/ui/modules/projects/projects_types.ts";
 
-type FormState = {
-	name: string;
-	summary: string;
-	year: string;
-	status: string;
-	stack: string;
-	link: string;
+type FormState = Record<string, string>;
+type ParsedPatch = {
+	patch?: ProjectPatchPayload;
+	error?: string;
 };
 
-function toFormState(project: Project): FormState {
-	return {
-		name: project.name,
-		summary: project.summary,
-		year: String(project.year),
-		status: project.status,
-		stack: project.stack.join(", "),
-		link: project.link ?? "",
-	};
+function are_string_arrays_equal(left: string[], right: string[]): boolean {
+	if (left.length !== right.length) {
+		return false;
+	}
+
+	for (let index = 0; index < left.length; index += 1) {
+		if (left[index] !== right[index]) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
-function toPatchPayload(form_state: FormState): ProjectPatchPayload {
-	return {
-		name: form_state.name.trim(),
-		summary: form_state.summary.trim(),
-		year: Number(form_state.year),
-		status: form_state.status.trim(),
-		stack: form_state.stack
-			.split(",")
-			.map((item) => item.trim())
-			.filter((item) => item.length > 0),
-		link: form_state.link.trim() || undefined,
-	};
+function to_input_value(value: unknown, field: ProjectFieldMeta): string {
+	if (value === undefined || value === null) {
+		return "";
+	}
+
+	if (field.jsonDataType === "array" && Array.isArray(value)) {
+		return value.map((item) => String(item)).join(", ");
+	}
+
+	return String(value);
+}
+
+function build_form_state(project: Project, form_fields: ProjectFieldMeta[]): FormState {
+	const next_form_state: FormState = {};
+
+	for (const field of form_fields) {
+		next_form_state[field.name] = to_input_value(project[field.name as keyof Project], field);
+	}
+
+	return next_form_state;
+}
+
+function parse_field_input(value: string, field: ProjectFieldMeta): { value?: unknown; error?: string } {
+	if (field.jsonDataType === "number") {
+		const parsed_number = Number(value);
+		if (!Number.isFinite(parsed_number)) {
+			return { error: `${field.label} must be a valid number.` };
+		}
+
+		if (
+			(field.storageDataType === "int" || field.storageDataType === "int64") &&
+			!Number.isInteger(parsed_number)
+		) {
+			return { error: `${field.label} must be an integer.` };
+		}
+
+		return { value: parsed_number };
+	}
+
+	if (field.jsonDataType === "array") {
+		return {
+			value: value
+				.split(",")
+				.map((item) => item.trim())
+				.filter((item) => item.length > 0),
+		};
+	}
+
+	if (field.jsonDataType === "boolean") {
+		return { value: value === "true" || value === "1" };
+	}
+
+	return { value: value.trim() };
+}
+
+function get_changed_patch_payload(
+	project: Project,
+	form_state: FormState,
+	form_fields: ProjectFieldMeta[],
+): ParsedPatch {
+	const patch: Record<string, unknown> = {};
+
+	for (const field of form_fields) {
+		const raw_value = form_state[field.name] ?? "";
+		const parsed = parse_field_input(raw_value, field);
+		if (parsed.error) {
+			return { error: parsed.error };
+		}
+
+		if (field.isRequired) {
+			if (field.jsonDataType === "array") {
+				if (!Array.isArray(parsed.value) || parsed.value.length === 0) {
+					return { error: `${field.label} is required.` };
+				}
+			} else if (String(parsed.value ?? "").trim() === "") {
+				return { error: `${field.label} is required.` };
+			}
+		}
+
+		const current_value = project[field.name as keyof Project];
+		if (field.jsonDataType === "array") {
+			const next_array = Array.isArray(parsed.value) ? parsed.value.map((item) => String(item)) : [];
+			const current_array = Array.isArray(current_value)
+				? current_value.map((item) => String(item))
+				: [];
+			if (!are_string_arrays_equal(next_array, current_array)) {
+				patch[field.name] = next_array;
+			}
+			continue;
+		}
+
+		if (field.name === "link") {
+			const current_link = String(current_value ?? "").trim();
+			const next_link = String(parsed.value ?? "").trim();
+			if (next_link !== current_link) {
+				patch.link = next_link.length > 0 ? next_link : "";
+			}
+			continue;
+		}
+
+		if (parsed.value !== current_value) {
+			patch[field.name] = parsed.value;
+		}
+	}
+
+	return { patch: patch as ProjectPatchPayload };
 }
 
 function ProjectEditPage() {
 	const { project_id } = useParams();
 	const navigate = useNavigate();
 	const { data, setData } = useProjectsData();
+	const { meta, form_fields, is_loading: is_meta_loading, error_message: meta_error } =
+		use_project_entity_meta();
 	const initial_project = useMemo<Project | null>(() => {
 		if (!project_id) {
 			return null;
@@ -53,51 +155,75 @@ function ProjectEditPage() {
 		return data.projects.find((item) => item.id === project_id) ?? null;
 	}, [data.projects, project_id]);
 	const [project, setProject] = useState<Project | null>(initial_project);
-	const [form_state, setFormState] = useState<FormState>(
-		initial_project
-			? toFormState(initial_project)
-			: {
-					name: "",
-					summary: "",
-					year: "",
-					status: "",
-					stack: "",
-					link: "",
-				},
-	);
+	const [form_state, setFormState] = useState<FormState>({});
 	const [error_message, setErrorMessage] = useState<string | null>(null);
 	const [is_saving, setIsSaving] = useState(false);
+	const [is_loading, setIsLoading] = useState(!initial_project);
 
 	useEffect(() => {
-		if (initial_project) {
-			setProject(initial_project);
-			setFormState(toFormState(initial_project));
+		if (!initial_project || form_fields.length === 0) {
 			return;
 		}
 
+		setFormState(build_form_state(initial_project, form_fields));
+	}, [form_fields, initial_project]);
+
+	useEffect(() => {
 		if (!project_id) {
 			setProject(null);
 			setErrorMessage("Project id is missing.");
+			setIsLoading(false);
 			return;
+		}
+
+		let is_cancelled = false;
+		setIsLoading(true);
+		if (initial_project) {
+			setProject(initial_project);
+			if (form_fields.length > 0) {
+				setFormState(build_form_state(initial_project, form_fields));
+			}
+			setErrorMessage(null);
 		}
 
 		fetch(`/api/projects/${encodeURIComponent(project_id)}`)
 			.then(async (res) => {
-				const payload = (await res.json()) as ProjectApiResponse;
-				if (!res.ok || payload.hasError || !payload.data) {
-					throw new Error(payload.message ?? "Failed to load project.");
+				const payload = await readApiPayload<ProjectApiResponse>(res, "Failed to load project.");
+				if (!payload.data) {
+					throw new Error(payload.message ?? "Project not found.");
 				}
+
 				return payload.data;
 			})
 			.then((loaded_project) => {
+				if (is_cancelled) {
+					return;
+				}
+
 				setProject(loaded_project);
-				setFormState(toFormState(loaded_project));
+				if (form_fields.length > 0) {
+					setFormState(build_form_state(loaded_project, form_fields));
+				}
 				setErrorMessage(null);
 			})
 			.catch((error: unknown) => {
-				setErrorMessage(error instanceof Error ? error.message : "Failed to load project.");
+				if (is_cancelled) {
+					return;
+				}
+
+				setProject(null);
+				setErrorMessage(getUserFriendlyErrorMessage(error, "Failed to load project."));
+			})
+			.finally(() => {
+				if (!is_cancelled) {
+					setIsLoading(false);
+				}
 			});
-	}, [initial_project, project_id]);
+
+		return () => {
+			is_cancelled = true;
+		};
+	}, [form_fields, initial_project, project_id]);
 
 	if (!project_id) {
 		return (
@@ -106,6 +232,45 @@ function ProjectEditPage() {
 					<div className="hero-copy">
 						<h1>Edit Project</h1>
 						<p>Project id is missing.</p>
+					</div>
+				</section>
+			</div>
+		);
+	}
+
+	if (is_meta_loading) {
+		return (
+			<div className="page">
+				<section className="hero hero-slim">
+					<div className="hero-copy">
+						<h1>Edit Project</h1>
+						<p>Loading project field metadata...</p>
+					</div>
+				</section>
+			</div>
+		);
+	}
+
+	if (meta_error) {
+		return (
+			<div className="page">
+				<section className="hero hero-slim">
+					<div className="hero-copy">
+						<h1>Edit Project</h1>
+						<p>{meta_error}</p>
+					</div>
+				</section>
+			</div>
+		);
+	}
+
+	if (is_loading && !project) {
+		return (
+			<div className="page">
+				<section className="hero hero-slim">
+					<div className="hero-copy">
+						<h1>Edit Project</h1>
+						<p>Loading project...</p>
 					</div>
 				</section>
 			</div>
@@ -132,10 +297,10 @@ function ProjectEditPage() {
 
 	return (
 		<div className="page">
-			<title>Edit {project.name} | Cloudflare Vite React</title>
+			<title>{`Edit ${project.name} | Cloudflare Vite React`}</title>
 			<section className="hero hero-slim">
 				<div className="hero-copy">
-					<h1>Edit Project</h1>
+					<h1>{`Edit ${meta?.entityInfo.entityTitle ?? "Project"}`}</h1>
 					<p>Update project metadata and publish changes.</p>
 				</div>
 			</section>
@@ -146,119 +311,93 @@ function ProjectEditPage() {
 					event.preventDefault();
 					setIsSaving(true);
 					setErrorMessage(null);
+					const changed_patch = get_changed_patch_payload(project, form_state, form_fields);
+
+					if (changed_patch.error) {
+						setIsSaving(false);
+						setErrorMessage(changed_patch.error);
+						return;
+					}
+
+					const patch_payload = changed_patch.patch ?? {};
+					if (Object.keys(patch_payload).length === 0) {
+						setIsSaving(false);
+						setErrorMessage("No changes to save.");
+						return;
+					}
+
 					fetch(`/api/projects/${encodeURIComponent(project_id)}`, {
 						method: "PATCH",
 						headers: {
 							"content-type": "application/json",
 						},
-						body: JSON.stringify(toPatchPayload(form_state)),
+						body: JSON.stringify(patch_payload),
 					})
 						.then(async (res) => {
-							const payload = (await res.json()) as ProjectApiResponse;
-							if (!res.ok || payload.hasError || !payload.data) {
+							const payload = await readApiPayload<ProjectApiResponse>(
+								res,
+								"Failed to update project.",
+							);
+							if (!payload.data) {
 								throw new Error(payload.message ?? "Failed to update project.");
 							}
-
 							return payload.data;
 						})
 						.then((updated_project) => {
 							setData((current) => ({
-								projects: current.projects.map((item) =>
-									item.id === updated_project.id ? updated_project : item,
-								),
+								projects: current.projects.some((item) => item.id === updated_project.id)
+									? current.projects.map((item) =>
+											item.id === updated_project.id ? updated_project : item,
+										)
+									: [...current.projects, updated_project],
 							}));
 							navigate(`/projects/${updated_project.id}`);
 						})
 						.catch((error: unknown) => {
-							setErrorMessage(error instanceof Error ? error.message : "Failed to update project.");
+							setErrorMessage(getUserFriendlyErrorMessage(error, "Failed to update project."));
 						})
 						.finally(() => {
 							setIsSaving(false);
 						});
 				}}
 			>
-				{/*
-					Worker type-check compiles this file without DOM libs.
-					Use a structural cast for input values to keep shared type-check green.
-				*/}
-				<label className="field">
-					<span>Name</span>
-					<input
-						required
-						value={form_state.name}
-						onChange={(event) =>
-							setFormState((current) => ({
-								...current,
-								name: (event.currentTarget as unknown as { value: string }).value,
-							}))
-						}
-					/>
-				</label>
-				<label className="field">
-					<span>Summary</span>
-					<textarea
-						required
-						value={form_state.summary}
-						onChange={(event) =>
-							setFormState((current) => ({
-								...current,
-								summary: (event.currentTarget as unknown as { value: string }).value,
-							}))
-						}
-					/>
-				</label>
-				<label className="field">
-					<span>Year</span>
-					<input
-						required
-						type="number"
-						value={form_state.year}
-						onChange={(event) =>
-							setFormState((current) => ({
-								...current,
-								year: (event.currentTarget as unknown as { value: string }).value,
-							}))
-						}
-					/>
-				</label>
-				<label className="field">
-					<span>Status</span>
-					<input
-						required
-						value={form_state.status}
-						onChange={(event) =>
-							setFormState((current) => ({
-								...current,
-								status: (event.currentTarget as unknown as { value: string }).value,
-							}))
-						}
-					/>
-				</label>
-				<label className="field">
-					<span>Stack (comma separated)</span>
-					<input
-						required
-						value={form_state.stack}
-						onChange={(event) =>
-							setFormState((current) => ({
-								...current,
-								stack: (event.currentTarget as unknown as { value: string }).value,
-							}))
-						}
-					/>
-				</label>
-				<label className="field">
-					<span>Link</span>
-					<input
-						value={form_state.link}
-						onChange={(event) =>
-							setFormState((current) => ({
-								...current,
-								link: (event.currentTarget as unknown as { value: string }).value,
-							}))
-						}
-					/>
-				</label>
+				{form_fields.map((field) => {
+					const input_value = form_state[field.name] ?? "";
+					const input_type = field.jsonDataType === "number" ? "number" : "text";
+					const is_textarea = field.jsonDataType === "string" && field.formFieldProps.isFullWidth;
+
+					return (
+						<label className="field" key={field.name}>
+							<span>{field.label}</span>
+							{is_textarea ? (
+								<textarea
+									required={field.isRequired}
+									value={input_value}
+									onChange={(event) => {
+										const next_value = (event.currentTarget as unknown as { value: string }).value;
+										setFormState((current) => ({
+											...current,
+											[field.name]: next_value,
+										}));
+									}}
+								/>
+							) : (
+								<input
+									required={field.isRequired}
+									type={input_type}
+									value={input_value}
+									onChange={(event) => {
+										const next_value = (event.currentTarget as unknown as { value: string }).value;
+										setFormState((current) => ({
+											...current,
+											[field.name]: next_value,
+										}));
+									}}
+								/>
+							)}
+						</label>
+					);
+				})}
 
 				{error_message && <p className="status-card status-error">{error_message}</p>}
 

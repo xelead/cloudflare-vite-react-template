@@ -11,5 +11,6 @@ export type EnvKey =
     | "EMAIL_PROVIDER"
     | "CORS_ORIGIN"
     | "TURNSTILE_SECRET_KEY"
-    | "TURNSTILE_SITE_KEY";
+    | "TURNSTILE_SITE_KEY"
+    | `NEXT_PUBLIC_${string}`;
 

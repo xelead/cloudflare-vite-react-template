@@ -12,6 +12,14 @@ type RenderResult = {
 	html: string;
 };
 
+const react_refresh_preamble = `
+import RefreshRuntime from "/@react-refresh";
+RefreshRuntime.injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;
+window.__vite_plugin_react_preamble_installed__ = true;
+`;
+
 function Document({
 	children,
 	initialData,
@@ -28,6 +36,9 @@ function Document({
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<link rel="icon" type="image/svg+xml" href="/vite.svg" />
 				<style>{styles}</style>
+				{import.meta.env.DEV && (
+					<script type="module" dangerouslySetInnerHTML={{ __html: react_refresh_preamble }} />
+				)}
 			</head>
 			<body>
 				<div id="root">{children}</div>
@@ -36,6 +47,7 @@ function Document({
 						__html: `window.__INITIAL_DATA__ = ${initialData};`,
 					}}
 				/>
+				<script type="module" src="/src/ui/main.tsx"></script>
 			</body>
 		</html>
 	);

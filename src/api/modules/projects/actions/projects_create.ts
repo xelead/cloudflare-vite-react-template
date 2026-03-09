@@ -1,56 +1,26 @@
 import { ApiRes, type IApiRequestContext, type IApiResult } from "@src/interfaces/route_types.ts";
 import { type IProject } from "@src/api/modules/projects/project_types.ts";
 import { createProject } from "@src/api/modules/projects/projects_store.ts";
+import { parse_project_create_payload } from "@src/api/modules/projects/project_request_parser.ts";
 
-type ProjectCreateRequest = {
-	id?: string;
-	name?: string;
-	summary?: string;
-	year?: number | string;
-	status?: string;
-	stack?: string[] | string;
-	link?: string;
-};
-
-function normalizeStack(value: ProjectCreateRequest["stack"]): string[] {
-	if (Array.isArray(value)) {
-		return value.map((item) => String(item).trim()).filter((item) => item.length > 0);
-	}
-
-	if (typeof value === "string") {
-		return value
-			.split(",")
-			.map((item) => item.trim())
-			.filter((item) => item.length > 0);
-	}
-
-	return [];
-}
+export const route = {
+	method: "post",
+	path: "/api/projects",
+} as const;
 
 export default async function projectsCreate(
 	context: IApiRequestContext,
 ): Promise<IApiResult<IProject | null>> {
-	const request_data = await context.getRequestDataAsync<ProjectCreateRequest>();
-	const name = request_data.name?.trim();
-	const summary = request_data.summary?.trim();
-	const status = request_data.status?.trim();
-	const stack = normalizeStack(request_data.stack);
-	const year = Number(request_data.year);
-	const link = request_data.link?.trim() || undefined;
-
-	if (!name || !summary || !status || !Number.isInteger(year)) {
-		return ApiRes.validationError("Missing required fields for project creation.");
+	const db = await context.getCoreDbAsync();
+	const request_data = await context.getRequestDataAsync<Record<string, unknown>>();
+	const parsed_create_payload = parse_project_create_payload(request_data);
+	if (!parsed_create_payload.value) {
+		return ApiRes.validationError(
+			parsed_create_payload.error ?? "Invalid payload for project creation.",
+		);
 	}
 
-	const project = await createProject({
-		id: request_data.id?.trim(),
-		name,
-		summary,
-		year,
-		status,
-		stack,
-		link,
-	});
+	const project = await createProject(db, parsed_create_payload.value);
 
 	return {
 		...ApiRes.ok(project),

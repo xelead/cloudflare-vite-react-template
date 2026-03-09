@@ -1,3 +1,5 @@
+import type { Db } from "mongodb";
+
 export type IAppLocale = "en" | "fa"
 
 export interface IApiReq {
@@ -10,6 +12,7 @@ export interface IApiRequestContext {
     getOrgZoneIdAsync(): Promise<string | null>
     getLocaleAsync(): Promise<IAppLocale>
     getUserIdAsync(): Promise<string | null>
+    getCoreDbAsync(): Promise<Db>
     getRequestDataAsync<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T>
 }
 

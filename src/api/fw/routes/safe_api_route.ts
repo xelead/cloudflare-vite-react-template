@@ -1,11 +1,9 @@
-import type { Context } from "hono";
-
-import type { IApp } from "@src/api/fw/api_app_types.ts";
+import type { IApp, IAppContext } from "@src/api/fw/api_app_types.ts";
 import { safeApi } from "@src/api/fw/routes/safe_api.ts";
 import type { IApiRequestContext, IApiResult } from "@src/interfaces/route_types.ts";
 
 type ApiAction<T> = (
-	c: Context<{ Bindings: Env }>,
+	c: IAppContext,
 	requestContext: IApiRequestContext,
 ) => Promise<IApiResult<T>> | IApiResult<T>;
 

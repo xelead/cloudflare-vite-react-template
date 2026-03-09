@@ -1,0 +1,124 @@
+[
+	{
+		"key": "id",
+		"factory": "getId",
+		"extra_props": {
+			"listFieldProps": {
+				"visible": false
+			}
+		}
+	},
+	{
+		"key": "name",
+		"factory": "getString",
+		"args": ["name", "Name"],
+		"extra_props": {
+			"isRequired": true,
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "summary",
+		"factory": "getString",
+		"args": ["summary", "Summary"],
+		"extra_props": {
+			"isRequired": true,
+			"formFieldProps": {
+				"isFullWidth": true
+			},
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "year",
+		"factory": "getInt32",
+		"args": ["year", "Year"],
+		"extra_props": {
+			"isRequired": true,
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "status",
+		"factory": "getString",
+		"args": ["status", "Status"],
+		"extra_props": {
+			"isRequired": true,
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "stack",
+		"factory": "getStringArray",
+		"args": ["stack", "Stack"],
+		"extra_props": {
+			"isRequired": true,
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "link",
+		"factory": "getString",
+		"args": ["link", "Link"],
+		"extra_props": {
+			"listFieldProps": {
+				"visible": false
+			}
+		}
+	},
+	{
+		"key": "created_at",
+		"factory": "getDate",
+		"args": ["created_at", "Created At"],
+		"extra_props": {
+			"storageDataType": "timestamp",
+			"isReadOnly": true,
+			"formFieldProps": {
+				"visible": false
+			},
+			"listFieldProps": {
+				"visible": false
+			}
+		}
+	},
+	{
+		"key": "updated_at",
+		"factory": "getDate",
+		"args": ["updated_at", "Updated At"],
+		"extra_props": {
+			"storageDataType": "timestamp",
+			"isReadOnly": true,
+			"formFieldProps": {
+				"visible": false
+			},
+			"listFieldProps": {
+				"visible": false
+			}
+		}
+	},
+	{
+		"key": "deleted_at",
+		"factory": "getDate",
+		"args": ["deleted_at", "Deleted At"],
+		"extra_props": {
+			"storageDataType": "timestamp",
+			"isReadOnly": true,
+			"formFieldProps": {
+				"visible": false
+			},
+			"listFieldProps": {
+				"visible": false
+			}
+		}
+	}
+]

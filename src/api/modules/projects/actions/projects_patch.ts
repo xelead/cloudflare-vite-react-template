@@ -1,68 +1,29 @@
 import { ApiRes, type IApiRequestContext, type IApiResult } from "@src/interfaces/route_types.ts";
 import { type IProject } from "@src/api/modules/projects/project_types.ts";
 import { updateProject } from "@src/api/modules/projects/projects_store.ts";
+import { parse_project_patch_payload } from "@src/api/modules/projects/project_request_parser.ts";
 
-type ProjectPatchRequest = {
-	project_id?: string;
-	name?: string;
-	summary?: string;
-	year?: number | string;
-	status?: string;
-	stack?: string[] | string;
-	link?: string;
-};
-
-function normalizeStack(value: ProjectPatchRequest["stack"]): string[] | undefined {
-	if (Array.isArray(value)) {
-		return value.map((item) => String(item).trim()).filter((item) => item.length > 0);
-	}
-
-	if (typeof value === "string") {
-		return value
-			.split(",")
-			.map((item) => item.trim())
-			.filter((item) => item.length > 0);
-	}
-
-	return undefined;
-}
+export const route = {
+	method: "patch",
+	path: "/api/projects/:project_id",
+} as const;
 
 export default async function projectsPatch(
 	context: IApiRequestContext,
 ): Promise<IApiResult<IProject | null>> {
-	const request_data = await context.getRequestDataAsync<ProjectPatchRequest>();
-	const project_id = request_data.project_id?.trim();
+	const db = await context.getCoreDbAsync();
+	const request_data = await context.getRequestDataAsync<Record<string, unknown>>();
+	const project_id = String(request_data.project_id ?? "").trim();
 	if (!project_id) {
 		return ApiRes.validationError("Project id is required.");
 	}
 
-	const stack = normalizeStack(request_data.stack);
-	const next_year =
-		request_data.year !== undefined && request_data.year !== null
-			? Number(request_data.year)
-			: undefined;
-
-	if (next_year !== undefined && !Number.isInteger(next_year)) {
-		return ApiRes.validationError("Year must be an integer.");
+	const parsed_patch_payload = parse_project_patch_payload(request_data);
+	if (!parsed_patch_payload.value) {
+		return ApiRes.validationError(parsed_patch_payload.error ?? "Invalid patch payload.");
 	}
 
-	const patch: {
-		name?: string;
-		summary?: string;
-		year?: number;
-		status?: string;
-		stack?: string[];
-		link?: string;
-	} = {};
-
-	if (request_data.name !== undefined) patch.name = request_data.name?.trim();
-	if (request_data.summary !== undefined) patch.summary = request_data.summary?.trim();
-	if (request_data.year !== undefined) patch.year = next_year;
-	if (request_data.status !== undefined) patch.status = request_data.status?.trim();
-	if (request_data.stack !== undefined) patch.stack = stack;
-	if (request_data.link !== undefined) patch.link = request_data.link?.trim() || undefined;
-
-	const updated_project = await updateProject(project_id, patch);
+	const updated_project = await updateProject(db, project_id, parsed_patch_payload.value);
 
 	if (!updated_project) {
 		return ApiRes.error("Project not found.", 404, "not_found");
