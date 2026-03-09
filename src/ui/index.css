@@ -1,11 +1,26 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap");
 
+:root,
+:root[data-theme="light"] {
+	--ink: #101820;
+	--body-bg: #f5f0ea;
+	--bg-glow-one: rgba(231, 91, 45, 0.12);
+	--bg-glow-two: rgba(16, 24, 32, 0.08);
+}
+
+:root[data-theme="dark"] {
+	--ink: #e8edf2;
+	--body-bg: #0f1418;
+	--bg-glow-one: rgba(255, 139, 94, 0.18);
+	--bg-glow-two: rgba(173, 201, 230, 0.1);
+}
+
 :root {
 	font-family: "DM Sans", "Segoe UI", sans-serif;
 	line-height: 1.5;
 	font-weight: 400;
-	color: #101820;
-	background-color: #f5f0ea;
+	color: var(--ink);
+	background-color: var(--body-bg);
 	font-synthesis: none;
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
@@ -22,11 +37,12 @@ body {
 	background:
 		radial-gradient(
 			circle at top left,
-			rgba(231, 91, 45, 0.12),
+			var(--bg-glow-one),
 			transparent 55%
 		),
-		radial-gradient(circle at 20% 20%, rgba(16, 24, 32, 0.08), transparent 40%),
-		#f5f0ea;
+		radial-gradient(circle at 20% 20%, var(--bg-glow-two), transparent 40%),
+		var(--body-bg);
+	color: var(--ink);
 }
 
 a {

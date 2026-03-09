@@ -1,4 +1,5 @@
-:root {
+.app,
+.app[data-theme="light"] {
 	--ink: #101820;
 	--muted: #52606d;
 	--brand: #e75b2d;
@@ -6,6 +7,26 @@
 	--surface-strong: #f4f1ed;
 	--line: rgba(16, 24, 32, 0.12);
 	--shadow: 0 20px 40px -30px rgba(16, 24, 32, 0.6);
+	--hero-bg: linear-gradient(135deg, #f7f3ee 0%, #fffaf5 45%, #f4f6f8 100%);
+	--danger: #b3391b;
+	--body-bg: #f5f0ea;
+	--bg-glow-one: rgba(231, 91, 45, 0.12);
+	--bg-glow-two: rgba(16, 24, 32, 0.08);
+}
+
+.app[data-theme="dark"] {
+	--ink: #e8edf2;
+	--muted: #b0bcc9;
+	--brand: #ff8b5e;
+	--surface: #1a232c;
+	--surface-strong: #111820;
+	--line: rgba(232, 237, 242, 0.18);
+	--shadow: 0 20px 40px -30px rgba(0, 0, 0, 0.8);
+	--hero-bg: linear-gradient(135deg, #1f2a34 0%, #1a232c 45%, #111820 100%);
+	--danger: #ff8b5e;
+	--body-bg: #0f1418;
+	--bg-glow-one: rgba(255, 139, 94, 0.18);
+	--bg-glow-two: rgba(173, 201, 230, 0.1);
 }
 
 .app {
@@ -14,6 +35,11 @@
 	flex-direction: column;
 	gap: 2.5rem;
 	padding: 2.5rem clamp(1.5rem, 3vw, 3.5rem) 4rem;
+	color: var(--ink);
+	background:
+		radial-gradient(circle at top left, var(--bg-glow-one), transparent 55%),
+		radial-gradient(circle at 20% 20%, var(--bg-glow-two), transparent 40%),
+		var(--body-bg);
 }
 
 .site-header {
@@ -80,7 +106,7 @@
 	gap: 2rem;
 	align-items: center;
 	padding: 2.5rem;
-	background: linear-gradient(135deg, #f7f3ee 0%, #fffaf5 45%, #f4f6f8 100%);
+	background: var(--hero-bg);
 	border-radius: 28px;
 	border: 1px solid var(--line);
 	box-shadow: var(--shadow);
@@ -158,7 +184,7 @@
 
 .status-error {
 	border-color: rgba(231, 91, 45, 0.4);
-	color: #b3391b;
+	color: var(--danger);
 }
 
 .project-grid {
@@ -236,12 +262,12 @@
 }
 
 .danger-link {
-	color: #b3391b;
-	border-bottom-color: #b3391b;
+	color: var(--danger);
+	border-bottom-color: var(--danger);
 }
 
 .danger-button {
-	background: #b3391b;
+	background: var(--danger);
 }
 
 .project-form {
