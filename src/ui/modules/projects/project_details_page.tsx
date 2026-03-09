@@ -46,6 +46,12 @@ function ProjectDetailsPage() {
 			return;
 		}
 
+		if (initialProject) {
+			setProject(initialProject);
+			setErrorMessage(null);
+			return;
+		}
+
 		setIsLoading(true);
 		setErrorMessage(null);
 		fetch(`/api/projects/${encodeURIComponent(project_id)}`)
@@ -68,7 +74,7 @@ function ProjectDetailsPage() {
 			.finally(() => {
 				setIsLoading(false);
 			});
-	}, [project_id]);
+	}, [initialProject, project_id]);
 
 	if (isLoading && !project) {
 		return (

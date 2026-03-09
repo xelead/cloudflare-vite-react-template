@@ -176,15 +176,18 @@ function ProjectEditPage() {
 			return;
 		}
 
-		let is_cancelled = false;
-		setIsLoading(true);
 		if (initial_project) {
 			setProject(initial_project);
 			if (form_fields.length > 0) {
 				setFormState(build_form_state(initial_project, form_fields));
 			}
 			setErrorMessage(null);
+			setIsLoading(false);
+			return;
 		}
+
+		let is_cancelled = false;
+		setIsLoading(true);
 
 		fetch(`/api/projects/${encodeURIComponent(project_id)}`)
 			.then(async (res) => {
