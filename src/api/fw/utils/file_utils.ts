@@ -1,7 +1,4 @@
-import * as fs from "fs"
-import { forEach } from "lodash"
-import { join, sep, dirname } from "path"
-import {FileNameUtils} from "@src/common/utils/filename_utils.ts";
+import { FileNameUtils } from "@src/common/utils/filename_utils.ts";
 
 export interface FileInfo {
 	path: string;
@@ -9,6 +6,86 @@ export interface FileInfo {
 	size: number;
 	createdAt: Date;
 	ext?: string;
+	isFolder?: boolean;
+	isFile?: boolean;
+}
+
+type FileStats = {
+	size: number;
+	ctime: Date;
+	isDirectory: () => boolean;
+	isFile: () => boolean;
+};
+
+type FsModule = {
+	constants: { F_OK: number };
+	existsSync: (path: string) => boolean;
+	lstatSync: (path: string) => FileStats;
+	readdirSync: (path: string) => string[];
+	readFileSync: (path: string, encoding: "utf-8") => string;
+	mkdirSync: (path: string, options?: { recursive?: boolean }) => void;
+	access: (path: string, mode: number, callback: (err: unknown) => void) => void;
+	promises: {
+		readFile: (path: string, encoding?: "utf-8") => Promise<string | Uint8Array>;
+		readdir: (path: string) => Promise<string[]>;
+		mkdir: (path: string, options?: { recursive?: boolean }) => Promise<void>;
+		writeFile: (path: string, data: Uint8Array) => Promise<void>;
+		unlink: (path: string) => Promise<void>;
+	};
+};
+
+type PathModule = {
+	join: (...paths: string[]) => string;
+	dirname: (path: string) => string;
+	sep: string;
+};
+
+function getBuiltinModule(moduleName: string): unknown | null {
+	const g = globalThis as {
+		process?: { getBuiltinModule?: (name: string) => unknown };
+	};
+	const getBuiltin = g.process?.getBuiltinModule;
+	if (typeof getBuiltin !== "function") return null;
+	try {
+		return getBuiltin(moduleName) ?? getBuiltin(moduleName.replace(/^node:/, ""));
+	} catch {
+		return null;
+	}
+}
+
+function getFs(): FsModule | null {
+	return (getBuiltinModule("node:fs") as FsModule | null) ?? null;
+}
+
+function getPath(): PathModule | null {
+	return (getBuiltinModule("node:path") as PathModule | null) ?? null;
+}
+
+function joinPath(...parts: string[]): string {
+	const path = getPath();
+	if (path) return path.join(...parts);
+	return parts.filter(Boolean).join("/").replace(/\/+/g, "/");
+}
+
+function dirnamePath(pathValue: string): string {
+	const path = getPath();
+	if (path) return path.dirname(pathValue);
+	const normalized = pathValue.replace(/\\/g, "/");
+	const lastSlash = normalized.lastIndexOf("/");
+	return lastSlash <= 0 ? "." : normalized.slice(0, lastSlash);
+}
+
+function pathSeparator(): string {
+	const path = getPath();
+	return path?.sep ?? "/";
+}
+
+function isWorkerRuntime(): boolean {
+	return typeof WebSocketPair !== "undefined";
+}
+
+function workerUnsupported(methodName: string): never {
+	throw new Error(`FileUtils.${methodName} is not supported in Cloudflare Workers (no local filesystem).`);
 }
 
 export class FileUtils {
@@ -19,7 +96,9 @@ export class FileUtils {
 	 * @param fileFullName
 	 * @return {fs.Stats | null}
 	 */
-	static getFileStats(fileFullName: string): fs.Stats | null {
+	static getFileStats(fileFullName: string): FileStats | null {
+		const fs = getFs();
+		if (!fs) return null;
 		if (!fs.existsSync(fileFullName)) return null
 		try {
 			return fs.lstatSync(fileFullName)
@@ -35,22 +114,24 @@ export class FileUtils {
 	 */
 	getAllFolders(source: string): FileInfo[] {
 		const folders: FileInfo[] = []
+		const fs = getFs();
+		if (!fs) return folders;
 
 		const list = fs.readdirSync(source)
-		forEach(list, function getItem(item) {
-			const stats = FileUtils.getFileStats(join(source, item))
-			if (!stats) return
+		for (const item of list) {
+			const stats = FileUtils.getFileStats(joinPath(source, item))
+			if (!stats) continue
 			if (stats.isDirectory()) {
-				const name = item.split(sep).pop()!
+				const name = item.split(pathSeparator()).pop()!
 				folders.push({
-					path: join(source, item),
+					path: joinPath(source, item),
 					name,
 					ext: FileNameUtils.getFileExt(name),
 					size: stats.size,
 					createdAt: stats.ctime,
 				})
 			}
-		})
+		}
 
 		return folders
 	}
@@ -62,15 +143,17 @@ export class FileUtils {
 	 */
 	getAllFilesAndFolders(source: string): FileInfo[] {
 		const result: FileInfo[] = []
+		const fs = getFs();
+		if (!fs) return result;
 
 		const list = fs.readdirSync(source)
-		forEach(list, function getItem(item) {
-			const stats = FileUtils.getFileStats(join(source, item))
-			if (!stats) return
+		for (const item of list) {
+			const stats = FileUtils.getFileStats(joinPath(source, item))
+			if (!stats) continue
 
-			const name = item.split(sep).pop()!
+			const name = item.split(pathSeparator()).pop()!
 			result.push({
-				path: join(source, item),
+				path: joinPath(source, item),
 				name,
 				ext: FileNameUtils.getFileExt(name),
 				size: stats.size,
@@ -78,7 +161,7 @@ export class FileUtils {
 				isFolder: stats.isDirectory(),
 				isFile: stats.isFile(),
 			})
-		})
+		}
 
 		return result
 	}
@@ -89,6 +172,8 @@ export class FileUtils {
 	 * @return {string|null} file content as string
 	 */
 	readAllText(fileFullName: string): string | null {
+		const fs = getFs();
+		if (!fs) return null;
 		if (!fs.existsSync(fileFullName)) return null
 		return fs.readFileSync(fileFullName, "utf-8")
 	}
@@ -109,10 +194,12 @@ export class FileUtils {
 	 * @param {string} fileFullName - file full name
 	 * @return {Promise<Uint8Array>} file content as Buffer
 	 */
-	async readAllBytesAsync(fileFullName: string): Promise<Buffer | null> {
+	async readAllBytesAsync(fileFullName: string): Promise<Uint8Array | null> {
+		const fs = getFs();
+		if (!fs) return null;
 		const fsPromises = fs.promises
 		if (!fs.existsSync(fileFullName)) return null
-		return fsPromises.readFile(fileFullName)
+		return (await fsPromises.readFile(fileFullName)) as Uint8Array
 	}
 
 // /**
@@ -135,6 +222,11 @@ export class FileUtils {
 	 * @param {string} pathFullName - the full path
 	 */
 	createFolderIfNotExist(pathFullName: string): void {
+		const fs = getFs();
+		if (!fs) {
+			if (isWorkerRuntime()) workerUnsupported("createFolderIfNotExist");
+			return;
+		}
 		if (!pathFullName) return
 		if (!fs.existsSync(pathFullName)) fs.mkdirSync(pathFullName, { recursive: true })
 	}
@@ -173,9 +265,11 @@ export class FileUtils {
 	 * @return {Promise<Object|null>} file content as json object or null if didn't work
 	 */
 	async readFileAsJsonAsync(fileFullName: string): Promise<object | null> {
+		const fs = getFs();
+		if (!fs) return null;
 		const fsPromises = fs.promises // needs node 11
 		if (!fs.existsSync(fileFullName)) return null
-		const fileContent = await fsPromises.readFile(fileFullName, "utf-8")
+		const fileContent = (await fsPromises.readFile(fileFullName, "utf-8")) as string
 		let metaObject
 		try {
 			metaObject = JSON.parse(fileContent)
@@ -192,18 +286,20 @@ export class FileUtils {
 	 */
 	async getAllFilesAsync(source: string): Promise<Array<FileInfo>> {
 		const folders: Array<FileInfo> = []
+		const fs = getFs();
+		if (!fs) return folders;
 		if (!fs.existsSync(source)) return []
 		const fsPromises = fs.promises // needs node 11
 		const list = await fsPromises.readdir(source)
-		forEach(list, function getItem(item) {
-			const stats = FileUtils.getFileStats(join(source, item))
-			if (!stats) return
+		for (const item of list) {
+			const stats = FileUtils.getFileStats(joinPath(source, item))
+			if (!stats) continue
 
 			if (!stats.isDirectory()) {
-				const name = item.split(sep).pop()
+				const name = item.split(pathSeparator()).pop()
 				if (name) {
 					folders.push({
-						path: join(source, item),
+						path: joinPath(source, item),
 						name,
 						ext: FileNameUtils.getFileExt(name),
 						size: stats.size,
@@ -211,7 +307,7 @@ export class FileUtils {
 					})
 				}
 			}
-		})
+		}
 
 		return folders
 	}
@@ -223,17 +319,19 @@ export class FileUtils {
 	 */
 	async getAllFileNamesAsync(source: string): Promise<Array<string>> {
 		const result: Array<string> = []
+		const fs = getFs();
+		if (!fs) return result;
 		if (!fs.existsSync(source)) return []
 		const fsPromises = fs.promises // needs node 11
 		const list = await fsPromises.readdir(source)
-		forEach(list, function getItem(item) {
-			const stats = FileUtils.getFileStats(join(source, item))
-			if (!stats) return
+		for (const item of list) {
+			const stats = FileUtils.getFileStats(joinPath(source, item))
+			if (!stats) continue
 
 			if (!stats.isDirectory()) {
 				result.push(item)
 			}
-		})
+		}
 		return result
 	}
 
@@ -243,9 +341,11 @@ export class FileUtils {
 	 * @param {Uint8Array} fileBuffer  - actual file bytes to be written
 	 * @returns {Promise<string>}
 	 */
-	async saveAllBytes(fileFullName: string, fileBuffer: Buffer): Promise<string> {
+	async saveAllBytes(fileFullName: string, fileBuffer: Uint8Array): Promise<string> {
+		const fs = getFs();
+		if (!fs) workerUnsupported("saveAllBytes");
 		const fsPromises = fs.promises // needs node 11
-		await fsPromises.mkdir(dirname(fileFullName), { recursive: true })
+		await fsPromises.mkdir(dirnamePath(fileFullName), { recursive: true })
 		await fsPromises.writeFile(fileFullName, fileBuffer)
 		return fileFullName
 	}
@@ -256,9 +356,11 @@ export class FileUtils {
 	 * @param {string} fileFullName - file full name (for storing on the drive)
 	 */
 	async writeFileAllText(fileFullName: string, textContent: string): Promise<string> {
-		const buffer = Buffer.from(textContent, "utf-8")
+		const fs = getFs();
+		if (!fs) workerUnsupported("writeFileAllText");
+		const buffer = new TextEncoder().encode(textContent)
 		const fsPromises = fs.promises // needs node 11
-		await fsPromises.mkdir(dirname(fileFullName), { recursive: true })
+		await fsPromises.mkdir(dirnamePath(fileFullName), { recursive: true })
 		await fsPromises.writeFile(fileFullName, buffer)
 		return fileFullName
 	}
@@ -279,6 +381,8 @@ export class FileUtils {
 	 * @return {Promise<void>}
 	 */
 	async deleteFile(fileFullName: string): Promise<void> {
+		const fs = getFs();
+		if (!fs) workerUnsupported("deleteFile");
 		const fsPromises = fs.promises
 		return fsPromises.unlink(fileFullName)
 	}
@@ -289,6 +393,8 @@ export class FileUtils {
 	 * @return {Promise<void>}
 	 */
 	async deleteFileIgnoreError(fileFullName: string): Promise<void> {
+		const fs = getFs();
+		if (!fs) return;
 		const fsPromises = fs.promises
 		try {
 			await fsPromises.unlink(fileFullName)
@@ -303,6 +409,8 @@ export class FileUtils {
 	 * @return {Promise<boolean>}
 	 */
 	async doesLocalFileExists(filePath: string): Promise<boolean> {
+		const fs = getFs();
+		if (!fs) return false;
 		return new Promise((r) => {
 			fs.access(filePath, fs.constants.F_OK, (e) => r(!e))
 		})
