@@ -8,7 +8,7 @@ export const setWorkerEnv = (env: EnvSource) => {
 	worker_env_cache = env;
 };
 
-const getWorkerEnv = (): EnvSource => worker_env_cache;
+export const getWorkerEnv = (): EnvSource => worker_env_cache;
 
 const toEnvString = async (value: EnvValue): Promise<string> => {
 	if (typeof value === "string") return value.trim();
@@ -22,7 +22,7 @@ const toEnvString = async (value: EnvValue): Promise<string> => {
 	return "";
 };
 
-export const getEnvString = async (key: EnvKey): Promise<string> => {
+export const getEnvString = async (key: EnvKey | string): Promise<string> => {
 	const process_env = (globalThis as { process?: { env?: EnvSource } }).process?.env ?? {};
 	const process_value = await toEnvString(process_env[key]);
 	if (process_value) return process_value;
@@ -31,14 +31,14 @@ export const getEnvString = async (key: EnvKey): Promise<string> => {
 	return toEnvString(worker_env[key]);
 };
 
-export const getEnvNumber = async (key: EnvKey): Promise<number | undefined> => {
+export const getEnvNumber = async (key: EnvKey | string): Promise<number | undefined> => {
 	const raw = await getEnvString(key);
 	if (!raw) return undefined;
 	const parsed = Number(raw);
 	return Number.isFinite(parsed) ? parsed : undefined;
 };
 
-export const getEnvBoolean = async (key: EnvKey): Promise<boolean | undefined> => {
+export const getEnvBoolean = async (key: EnvKey | string): Promise<boolean | undefined> => {
 	const raw = (await getEnvString(key)).toLowerCase();
 	if (!raw) return undefined;
 	if (["true", "1", "yes", "on"].includes(raw)) return true;
