@@ -10,5 +10,6 @@ export type EnvKey =
     | "NOTIFY_TO_EMAIL"
     | "EMAIL_PROVIDER"
     | "CORS_ORIGIN"
-    | "TURNSTILE_SECRET_KEY";
+    | "TURNSTILE_SECRET_KEY"
+    | "TURNSTILE_SITE_KEY";
 

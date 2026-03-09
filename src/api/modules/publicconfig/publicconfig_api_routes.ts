@@ -1,5 +1,6 @@
 import { IApp } from "@src/api/fw/api_app_types.ts";
 import { getEnvString, getWorkerEnv } from "@src/api/fw/config/env_helpers.ts";
+import {EnvKey} from "@src/api/config/config_types.ts";
 
 type UiConfig = Record<string, string>;
 
@@ -13,7 +14,7 @@ async function get_public_env_config(): Promise<UiConfig> {
 	);
 
 	const entries = await Promise.all(
-		public_keys.map(async (key) => [key, await getEnvString(key)] as const),
+		public_keys.map(async (key) => [key, await getEnvString(key as EnvKey)] as const),
 	);
 
 	for (const [key, value] of entries) {
