@@ -1,0 +1,75 @@
+[
+	{
+		"key": "id",
+		"factory": "getId"
+	},
+	{
+		"key": "code",
+		"factory": "getCode"
+	},
+	{
+		"key": "title",
+		"factory": "getTitle"
+	},
+	{
+		"key": "firstName",
+		"factory": "getString",
+		"args": ["firstName", "First Name"],
+		"extra_props": {
+			"isRequired": true
+		}
+	},
+	{
+		"key": "lastName",
+		"factory": "getString",
+		"args": ["lastName", "Last Name"]
+	},
+	{
+		"key": "displayName",
+		"factory": "getString",
+		"args": ["displayName", "Display Name"]
+	},
+	{
+		"key": "int64",
+		"factory": "getInt64Field",
+		"args": ["int64Field", "Int64 Field"]
+	},
+	{
+		"key": "float",
+		"factory": "getFloatField",
+		"args": ["floatField", "Float Field"]
+	},
+	{
+		"key": "string",
+		"factory": "getString",
+		"args": ["stringField", "String Field"]
+	},
+	{
+		"key": "createdBy",
+		"factory": "getCreatedBy"
+	},
+	{
+		"key": "createdAt",
+		"factory": "getCreatedAt"
+	},
+	{
+		"key": "updatedAt",
+		"factory": "getUpdatedAt"
+	},
+	{
+		"key": "updatedBy",
+		"factory": "getUpdatedBy"
+	},
+	{
+		"key": "notedBy",
+		"factory": "getNotedBy"
+	},
+	{
+		"key": "notedAt",
+		"factory": "getNotedAt"
+	},
+	{
+		"key": "notes",
+		"factory": "getNotes"
+	}
+]

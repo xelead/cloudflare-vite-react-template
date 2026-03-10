@@ -5,6 +5,10 @@
 		"useDefineForClassFields": true,
 		"lib": ["ES2020", "DOM", "DOM.Iterable"],
 		"module": "ESNext",
+		"baseUrl": ".",
+		"paths": {
+			"@src/*": ["src/*"]
+		},
 		"skipLibCheck": true,
 
 		/* Bundler mode */
@@ -22,5 +26,5 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedSideEffectImports": true
 	},
-	"include": ["src/react-app"]
+	"include": ["src/ui"]
 }

@@ -1,0 +1,16 @@
+
+export type EnvKey =
+    | "XE_CORE_DB_URL"
+    | "AWS_REGION"
+    | "AWS_ACCESS_KEY_ID"
+    | "AWS_SECRET_ACCESS_KEY"
+    | "AWS_SESSION_TOKEN"
+    | "SES_CONFIGURATION_SET"
+    | "NOTIFY_FROM_EMAIL"
+    | "NOTIFY_TO_EMAIL"
+    | "EMAIL_PROVIDER"
+    | "CORS_ORIGIN"
+    | "TURNSTILE_SECRET_KEY"
+    | "TURNSTILE_SITE_KEY"
+    | `NEXT_PUBLIC_${string}`;
+
