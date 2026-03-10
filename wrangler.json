@@ -17,8 +17,8 @@
 				"EMAIL_PROVIDER": "ses",
 				"NOTIFY_FROM_EMAIL": "website@xelead.com",
 				"NOTIFY_TO_EMAIL": "dev@xelead.com",
-				"NEXT_PUBLIC_ASSETS_BASE_URL": "https://cdn1.xelead.com",
-				"NEXT_PUBLIC_API_BASE_URL": "https://xelead.com",
+				"NEXT_PUBLIC_ASSETS_BASE_URL": "https://cdn1.headshotprime.com",
+				"NEXT_PUBLIC_API_BASE_URL": "https://headshotprime.com",
 				"AWS_REGION": "us-west-2"
 			},
 			"secrets_store_secrets": [
