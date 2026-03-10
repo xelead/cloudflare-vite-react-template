@@ -94,7 +94,7 @@ export function create_get_by_id_action<T = Record<string, unknown>>(entity_info
 /**
  * Creates a GET metadata endpoint handler
  */
-export function create_get_meta_action<TMeta extends { entityInfo: { fields: unknown[] } }>(
+export function create_get_meta_action<TMeta extends { fields: unknown[] }>(
 	_entity_info: IEntityInfo,
 	get_meta_fn: () => TMeta,
 ) {

@@ -363,3 +363,161 @@ button:hover {
 		flex-wrap: wrap;
 	}
 }
+
+/* Entity Grid Components */
+.entity-grid-container {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.view-toggle {
+	display: flex;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.view-toggle button {
+	padding: 0.4rem 1rem;
+	font-size: 0.85rem;
+	background: var(--surface);
+	color: var(--muted);
+	border: 1px solid var(--line);
+}
+
+.view-toggle button.active {
+	background: var(--ink);
+	color: white;
+}
+
+.view-toggle button:hover {
+	transform: none;
+	box-shadow: none;
+	opacity: 0.9;
+}
+
+.entity-grid-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 1.5rem;
+}
+
+.entity-card {
+	background: var(--surface);
+	padding: 1.8rem;
+	border-radius: 22px;
+	border: 1px solid var(--line);
+	box-shadow: var(--shadow);
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.entity-card-header {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.entity-card-header h2 {
+	margin: 0 0 0.4rem;
+	font-size: 1.3rem;
+}
+
+.entity-card-meta {
+	font-size: 0.9rem;
+	color: var(--muted);
+	display: flex;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.entity-card-label {
+	font-weight: 500;
+	color: var(--ink);
+}
+
+.entity-card-value {
+	color: var(--muted);
+}
+
+.entity-card-actions {
+	display: flex;
+	gap: 0.8rem;
+	flex-wrap: wrap;
+	margin-top: 0.5rem;
+}
+
+.entity-link {
+	color: var(--ink);
+	font-weight: 600;
+	border-bottom: 2px solid var(--brand);
+	width: fit-content;
+}
+
+.entity-grid-table {
+	background: var(--surface);
+	border-radius: 22px;
+	border: 1px solid var(--line);
+	box-shadow: var(--shadow);
+	overflow-x: auto;
+}
+
+.entity-grid-table table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.entity-grid-table th,
+.entity-grid-table td {
+	padding: 1rem 1.2rem;
+	text-align: left;
+	border-bottom: 1px solid var(--line);
+}
+
+.entity-grid-table th {
+	font-weight: 600;
+	color: var(--ink);
+	background: var(--surface-strong);
+}
+
+.entity-grid-table th:first-child {
+	border-radius: 22px 0 0 0;
+}
+
+.entity-grid-table th:last-child {
+	border-radius: 0 22px 0 0;
+}
+
+.entity-grid-table tr:last-child td {
+	border-bottom: none;
+}
+
+.entity-grid-table tr:hover td {
+	background: var(--surface-strong);
+}
+
+.entity-row-actions {
+	display: flex;
+	gap: 0.6rem;
+	flex-wrap: wrap;
+}
+
+/* Entity Form Page */
+.entity-form {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	padding: 1.5rem;
+	border-radius: 16px;
+	border: 1px solid var(--line);
+	background: var(--surface);
+	box-shadow: var(--shadow);
+	max-width: 680px;
+}
+
+.entity-form-actions {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+}

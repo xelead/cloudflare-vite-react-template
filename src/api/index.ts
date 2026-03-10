@@ -14,9 +14,17 @@ app.use("*", async (c, next) => {
 		pathname.startsWith("/projects/") ||
 		pathname === "/api/projects" ||
 		pathname.startsWith("/api/projects/");
+	const needs_people_db =
+		pathname === "/people" ||
+		pathname.startsWith("/people/") ||
+		pathname === "/api/people" ||
+		pathname.startsWith("/api/people/");
 	const is_project_meta_route = pathname === "/api/projects/meta";
+	const is_people_meta_route = pathname === "/api/people/meta";
 
-	if (!needs_project_db || is_project_meta_route) {
+	const needs_db = (needs_project_db && !is_project_meta_route) || (needs_people_db && !is_people_meta_route);
+
+	if (!needs_db) {
 		await next();
 		return;
 	}

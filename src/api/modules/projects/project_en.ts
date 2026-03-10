@@ -1,14 +1,10 @@
-import project_fields_json from "@src/api/modules/projects/project_fields.json" assert { type: "json" };
-import {
-	build_entity_fields_from_json,
-	type EntityFieldDefinitionJson,
-} from "@src/common/crud/entity_field_definition_loader.ts";
 import type {
 	IEntityAction,
 	IEntityFieldInfo,
 	IEntityInfo,
 	IEntityStorageInfo,
 } from "@src/common/crud/entity_interfaces.ts";
+import { PROJECT_FIELDS, PROJECT_FIELD_ORDER } from "@src/api/modules/projects/project_types.ts";
 
 export const entity_res_code = "projects";
 
@@ -21,11 +17,11 @@ const project_storage: IEntityStorageInfo = {
 	defaultPageSize: 10,
 };
 
-const project_field_definitions = project_fields_json as EntityFieldDefinitionJson[];
-const project_fields_map = build_entity_fields_from_json(project_field_definitions);
+// Build ordered fields array from typed definitions
+const project_fields: IEntityFieldInfo[] = PROJECT_FIELD_ORDER.map(
+	(key) => PROJECT_FIELDS[key],
+);
 
-const project_field_keys = project_field_definitions.map((definition) => definition.key);
-const project_fields = project_field_keys.map((field_key) => project_fields_map[field_key]);
 const project_fields_by_name = project_fields.reduce<Record<string, IEntityFieldInfo>>(
 	(acc, field) => {
 		acc[field.name] = field;
@@ -107,13 +103,11 @@ export function get_project_entity_meta() {
 	}));
 
 	return {
-		entityInfo: {
-			entityNs: entity_info.entityNs,
-			entityName: entity_info.entityName,
-			resourceCode: entity_info.resourceCode,
-			displayNameFieldName: entity_info.displayNameFieldName,
-			entityTitle: entity_info.entityTitle,
-			fields: client_fields,
-		},
+		entityNs: entity_info.entityNs,
+		entityName: entity_info.entityName,
+		resourceCode: entity_info.resourceCode,
+		displayNameFieldName: entity_info.displayNameFieldName,
+		entityTitle: entity_info.entityTitle,
+		fields: client_fields,
 	};
 }

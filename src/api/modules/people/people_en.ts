@@ -107,13 +107,11 @@ export function get_people_entity_meta() {
 	}));
 
 	return {
-		entityInfo: {
-			entityNs: entity_info.entityNs,
-			entityName: entity_info.entityName,
-			resourceCode: entity_info.resourceCode,
-			displayNameFieldName: entity_info.displayNameFieldName,
-			entityTitle: entity_info.entityTitle,
-			fields: client_fields,
-		},
+		entityNs: entity_info.entityNs,
+		entityName: entity_info.entityName,
+		resourceCode: entity_info.resourceCode,
+		displayNameFieldName: entity_info.displayNameFieldName,
+		entityTitle: entity_info.entityTitle,
+		fields: client_fields,
 	};
 }
