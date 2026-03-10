@@ -1,5 +1,5 @@
 import { EntityViewPage } from "@src/ui/common/index.ts";
-import { usePeopleData } from "@src/ui/modules/people/people_data.tsx";
+import { usePeopleData } from "@src/ui/common/entities_data.tsx";
 
 function PersonDetailsPage() {
 	const { data } = usePeopleData();

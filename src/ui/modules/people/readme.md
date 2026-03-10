@@ -1,4 +1,6 @@
 # People React Module
 
-Contains the `People` page, local data context, and response types used to
-render `/people` with API-provided data.
+Contains the `People` list/details/edit pages used to render `/people`
+routes with API-provided data.
+
+People data context is shared from `src/ui/common/entities_data.tsx`.

@@ -116,7 +116,7 @@ export function use_entity_meta(entity_code: string): UseEntityMetaResult {
 
 /**
  * Factory function that creates a hook bound to a specific entity code.
- * Useful for creating entity-specific hooks like use_project_entity_meta.
+ * Useful for creating entity-specific hooks without duplicating fetch/cache logic.
  */
 export function create_use_entity_meta(entity_code: string) {
 	return function use_bound_entity_meta(): UseEntityMetaResult {

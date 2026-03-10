@@ -1,6 +1,6 @@
 import { EntityEditPage } from "@src/ui/common/index.ts";
-import { usePeopleData } from "@src/ui/modules/people/people_data.tsx";
-import type { IPerson } from "@src/ui/modules/people/people_types.ts";
+import { usePeopleData } from "@src/ui/common/entities_data.tsx";
+import type { IPerson } from "@src/api/modules/people/people_types.ts";
 
 function PersonEditPage() {
 	const { data, setData } = usePeopleData();

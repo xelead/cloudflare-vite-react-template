@@ -21,6 +21,14 @@ export {
 	type EntityListResponse,
 	type EntityItemResponse,
 } from "./entity_data_context.tsx";
+export {
+	PeopleDataProvider,
+	ProjectsDataProvider,
+	usePeopleData,
+	useProjectsData,
+	type PeopleResponse,
+	type ProjectsResponse,
+} from "./entities_data.tsx";
 
 // Components
 export { DeleteConfirmDialog, useDeleteConfirmation } from "./DeleteConfirmDialog.tsx";

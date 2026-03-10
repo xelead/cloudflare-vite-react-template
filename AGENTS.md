@@ -20,6 +20,7 @@
 - Filenames: `kebab-case` for folders, `PascalCase` for components (e.g., `ProjectsPage.tsx`).
 - Prefer colocating page components under `src/ui/pages/`.
 - Reuse SSR route factories under `src/api/fw/ssr/` for module SSR pages to avoid duplicated handlers.
+- Shared UI entity data providers/hooks live in `src/ui/common/entities_data.tsx` (avoid per-module duplicates).
 
 ## Testing Guidelines
 
