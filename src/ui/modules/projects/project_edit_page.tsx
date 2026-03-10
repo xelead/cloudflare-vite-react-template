@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+	getErrorDebugDetails,
 	getUserFriendlyErrorMessage,
 	readApiPayload,
 } from "@src/common/crud/api_response_utils.ts";
@@ -157,6 +158,7 @@ function ProjectEditPage() {
 	const [project, setProject] = useState<Project | null>(initial_project);
 	const [form_state, setFormState] = useState<FormState>({});
 	const [error_message, setErrorMessage] = useState<string | null>(null);
+	const [error_debug_details, setErrorDebugDetails] = useState<Record<string, unknown> | null>(null);
 	const [is_saving, setIsSaving] = useState(false);
 	const [is_loading, setIsLoading] = useState(!initial_project);
 
@@ -172,6 +174,7 @@ function ProjectEditPage() {
 		if (!project_id) {
 			setProject(null);
 			setErrorMessage("Project id is missing.");
+			setErrorDebugDetails(null);
 			setIsLoading(false);
 			return;
 		}
@@ -182,6 +185,7 @@ function ProjectEditPage() {
 				setFormState(build_form_state(initial_project, form_fields));
 			}
 			setErrorMessage(null);
+			setErrorDebugDetails(null);
 			setIsLoading(false);
 			return;
 		}
@@ -208,6 +212,7 @@ function ProjectEditPage() {
 					setFormState(build_form_state(loaded_project, form_fields));
 				}
 				setErrorMessage(null);
+				setErrorDebugDetails(null);
 			})
 			.catch((error: unknown) => {
 				if (is_cancelled) {
@@ -216,6 +221,7 @@ function ProjectEditPage() {
 
 				setProject(null);
 				setErrorMessage(getUserFriendlyErrorMessage(error, "Failed to load project."));
+				setErrorDebugDetails(getErrorDebugDetails(error) ?? null);
 			})
 			.finally(() => {
 				if (!is_cancelled) {
@@ -314,6 +320,7 @@ function ProjectEditPage() {
 					event.preventDefault();
 					setIsSaving(true);
 					setErrorMessage(null);
+					setErrorDebugDetails(null);
 					const changed_patch = get_changed_patch_payload(project, form_state, form_fields);
 
 					if (changed_patch.error) {
@@ -358,6 +365,7 @@ function ProjectEditPage() {
 						})
 						.catch((error: unknown) => {
 							setErrorMessage(getUserFriendlyErrorMessage(error, "Failed to update project."));
+							setErrorDebugDetails(getErrorDebugDetails(error) ?? null);
 						})
 						.finally(() => {
 							setIsSaving(false);
@@ -402,7 +410,17 @@ function ProjectEditPage() {
 					);
 				})}
 
-				{error_message && <p className="status-card status-error">{error_message}</p>}
+				{error_message && (
+					<div className="status-card status-error">
+						<p>{error_message}</p>
+						{error_debug_details && (
+							<details className="error-details">
+								<summary>Debug Details</summary>
+								<pre>{JSON.stringify(error_debug_details, null, 2)}</pre>
+							</details>
+						)}
+					</div>
+				)}
 
 				<div className="project-form-actions">
 					<button disabled={is_saving} type="submit">

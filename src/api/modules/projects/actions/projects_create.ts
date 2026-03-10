@@ -1,29 +1,9 @@
-import { ApiRes, type IApiRequestContext, type IApiResult } from "@src/interfaces/route_types.ts";
-import { type IProject } from "@src/api/modules/projects/project_types.ts";
-import { createProject } from "@src/api/modules/projects/projects_store.ts";
-import { parse_project_create_payload } from "@src/api/modules/projects/project_request_parser.ts";
+import {
+	create_create_action,
+	define_route,
+} from "@src/api/fw/crud/index.ts";
+import { entity_info } from "@src/api/modules/projects/project_en.ts";
+import type { IProject } from "@src/api/modules/projects/project_types.ts";
 
-export const route = {
-	method: "post",
-	path: "/api/projects",
-} as const;
-
-export default async function projectsCreate(
-	context: IApiRequestContext,
-): Promise<IApiResult<IProject | null>> {
-	const db = await context.getCoreDbAsync();
-	const request_data = await context.getRequestDataAsync<Record<string, unknown>>();
-	const parsed_create_payload = parse_project_create_payload(request_data);
-	if (!parsed_create_payload.value) {
-		return ApiRes.validationError(
-			parsed_create_payload.error ?? "Invalid payload for project creation.",
-		);
-	}
-
-	const project = await createProject(db, parsed_create_payload.value);
-
-	return {
-		...ApiRes.ok(project),
-		code: 201,
-	};
-}
+export const route = define_route("post", "/api/projects");
+export default create_create_action<IProject>(entity_info);

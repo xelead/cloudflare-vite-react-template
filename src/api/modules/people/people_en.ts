@@ -1,4 +1,4 @@
-import project_fields_json from "@src/api/modules/projects/project_fields.json" assert { type: "json" };
+import people_fields_json from "@src/api/modules/people/people_fields.json" assert { type: "json" };
 import {
 	build_entity_fields_from_json,
 	type EntityFieldDefinitionJson,
@@ -10,23 +10,23 @@ import type {
 	IEntityStorageInfo,
 } from "@src/common/crud/entity_interfaces.ts";
 
-export const entity_res_code = "projects";
+export const entity_res_code = "people";
 
-const project_storage: IEntityStorageInfo = {
+const people_storage: IEntityStorageInfo = {
 	dbName: "core",
-	tableName: "projects",
-	viewName: "projects",
+	tableName: "people",
+	viewName: "people",
 	defaultFilter: null,
 	defaultSort: [{ columnName: "updated_at", dir: "desc" }],
 	defaultPageSize: 10,
 };
 
-const project_field_definitions = project_fields_json as EntityFieldDefinitionJson[];
-const project_fields_map = build_entity_fields_from_json(project_field_definitions);
+const people_field_definitions = people_fields_json as EntityFieldDefinitionJson[];
+const people_fields_map = build_entity_fields_from_json(people_field_definitions);
 
-const project_field_keys = project_field_definitions.map((definition) => definition.key);
-const project_fields = project_field_keys.map((field_key) => project_fields_map[field_key]);
-const project_fields_by_name = project_fields.reduce<Record<string, IEntityFieldInfo>>(
+const people_field_keys = people_field_definitions.map((definition) => definition.key);
+const people_fields = people_field_keys.map((field_key) => people_fields_map[field_key]);
+const people_fields_by_name = people_fields.reduce<Record<string, IEntityFieldInfo>>(
 	(acc, field) => {
 		acc[field.name] = field;
 		return acc;
@@ -35,7 +35,7 @@ const project_fields_by_name = project_fields.reduce<Record<string, IEntityField
 );
 
 // Computed from field metadata - used internally for entity actions
-const project_editable_fields = project_fields.filter(
+const people_editable_fields = people_fields.filter(
 	(field) =>
 		!field.isReadOnly &&
 		field.name !== "id" &&
@@ -47,42 +47,42 @@ const project_editable_fields = project_fields.filter(
 const create_entity_action: IEntityAction = {
 	entityResCode: entity_res_code,
 	actionName: "create",
-	actionTitle: "Create Project",
+	actionTitle: "Create Person",
 	actionIcon: "",
-	fieldNames: project_editable_fields.map((field) => field.name),
+	fieldNames: people_editable_fields.map((field) => field.name),
 };
 
 const update_entity_action: IEntityAction = {
 	entityResCode: entity_res_code,
 	actionName: "update",
-	actionTitle: "Update Project",
+	actionTitle: "Update Person",
 	actionIcon: "",
-	fieldNames: project_editable_fields.map((field) => field.name),
+	fieldNames: people_editable_fields.map((field) => field.name),
 };
 
 const delete_entity_action: IEntityAction = {
 	entityResCode: entity_res_code,
 	actionName: "delete",
-	actionTitle: "Delete Project",
+	actionTitle: "Delete Person",
 	actionIcon: "",
 	fieldNames: ["id"],
 };
 
 export const entity_info: IEntityInfo = {
 	entityNs: "mem",
-	entityName: "Project",
+	entityName: "Person",
 	entityAdk: "",
 	resourceCode: entity_res_code,
-	storage: project_storage,
-	idFieldName: project_fields_by_name.id?.name ?? "id",
-	codeFieldName: project_fields_by_name.id?.name ?? "id",
-	displayNameFieldName: project_fields_by_name.name?.name ?? "name",
-	entityTitle: "Projects",
-	fields: project_fields,
+	storage: people_storage,
+	idFieldName: people_fields_by_name.id?.name ?? "id",
+	codeFieldName: people_fields_by_name.id?.name ?? "id",
+	displayNameFieldName: people_fields_by_name.name?.name ?? "name",
+	entityTitle: "People",
+	fields: people_fields,
 	apiActions: [create_entity_action, update_entity_action, delete_entity_action],
 };
 
-type ProjectClientField = Pick<
+type PersonClientField = Pick<
 	IEntityFieldInfo,
 	| "name"
 	| "label"
@@ -94,8 +94,8 @@ type ProjectClientField = Pick<
 	| "listFieldProps"
 >;
 
-export function get_project_entity_meta() {
-	const client_fields: ProjectClientField[] = project_fields.map((field) => ({
+export function get_people_entity_meta() {
+	const client_fields: PersonClientField[] = people_fields.map((field) => ({
 		name: field.name,
 		label: field.label,
 		jsonDataType: field.jsonDataType,

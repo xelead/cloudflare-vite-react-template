@@ -33,6 +33,8 @@ export interface IApiResult<T> {
     actionLinkTitle?: string
     /* URL to the UI path for the action link */
     actionLinkUiPath?: string
+    /* Debug details for error information (field names, values, etc.) */
+    debug_details?: Record<string, unknown>
 }
 
 export class ApiRes {
@@ -52,13 +54,14 @@ export class ApiRes {
             message: errorMessage,
         }
     }
-    public static validationError<T>(errorMessage: string): IApiResult<T> {
+    public static validationError<T>(errorMessage: string, debug_details?: Record<string, unknown>): IApiResult<T> {
         return {
             data: null as T,
             hasError: true,
             code: 400,
             message: errorMessage,
             errorType: "validation_error",
+            debug_details,
         }
     }
 }

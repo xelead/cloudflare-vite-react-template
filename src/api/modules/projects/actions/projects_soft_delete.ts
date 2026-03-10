@@ -1,30 +1,9 @@
-import { ApiRes, type IApiRequestContext, type IApiResult } from "@src/interfaces/route_types.ts";
-import { type IProject } from "@src/api/modules/projects/project_types.ts";
-import { softDeleteProject } from "@src/api/modules/projects/projects_store.ts";
+import {
+	create_soft_delete_action,
+	define_route,
+} from "@src/api/fw/crud/index.ts";
+import { entity_info } from "@src/api/modules/projects/project_en.ts";
+import type { IProject } from "@src/api/modules/projects/project_types.ts";
 
-export const route = {
-	method: "delete",
-	path: "/api/projects/:project_id",
-} as const;
-
-type ProjectDeleteRequest = {
-	project_id?: string;
-};
-
-export default async function projectsSoftDelete(
-	context: IApiRequestContext,
-): Promise<IApiResult<IProject | null>> {
-	const db = await context.getCoreDbAsync();
-	const request_data = await context.getRequestDataAsync<ProjectDeleteRequest>();
-	const project_id = request_data.project_id?.trim();
-	if (!project_id) {
-		return ApiRes.validationError("Project id is required.");
-	}
-
-	const deleted_project = await softDeleteProject(db, project_id);
-	if (!deleted_project) {
-		return ApiRes.error("Project not found.", 404, "not_found");
-	}
-
-	return ApiRes.ok(deleted_project);
-}
+export const route = define_route("delete", "/api/projects/:id");
+export default create_soft_delete_action<IProject>(entity_info);

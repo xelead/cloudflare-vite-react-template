@@ -1,0 +1,100 @@
+[
+	{
+		"key": "id",
+		"factory": "getId",
+		"extra_props": {
+			"listFieldProps": {
+				"visible": false
+			}
+		}
+	},
+	{
+		"key": "name",
+		"factory": "getString",
+		"args": ["name", "Name"],
+		"extra_props": {
+			"isRequired": true,
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "role",
+		"factory": "getString",
+		"args": ["role", "Role"],
+		"extra_props": {
+			"isRequired": true,
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "location",
+		"factory": "getString",
+		"args": ["location", "Location"],
+		"extra_props": {
+			"isRequired": true,
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "status",
+		"factory": "getString",
+		"args": ["status", "Status"],
+		"extra_props": {
+			"isRequired": true,
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "skills",
+		"factory": "getStringArray",
+		"args": ["skills", "Skills"],
+		"extra_props": {
+			"isRequired": true,
+			"listFieldProps": {
+				"visible": true
+			}
+		}
+	},
+	{
+		"key": "created_at",
+		"factory": "getCreatedAt",
+		"extra_props": {
+			"storageDataType": "timestamp",
+			"isReadOnly": true,
+			"listFieldProps": {
+				"visible": false
+			}
+		}
+	},
+	{
+		"key": "updated_at",
+		"factory": "getUpdatedAt",
+		"extra_props": {
+			"storageDataType": "timestamp",
+			"isReadOnly": true,
+			"listFieldProps": {
+				"visible": false
+			}
+		}
+	},
+	{
+		"key": "deleted_at",
+		"factory": "getDate",
+		"args": ["deleted_at", "Deleted At"],
+		"extra_props": {
+			"storageDataType": "timestamp",
+			"isReadOnly": true,
+			"listFieldProps": {
+				"visible": false
+			}
+		}
+	}
+]

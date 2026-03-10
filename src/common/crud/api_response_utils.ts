@@ -1,8 +1,33 @@
+/**
+ * Custom error class that can carry additional debug details from the API
+ */
+export class ApiError extends Error {
+	public readonly code?: number;
+	public readonly errorType?: string;
+	public readonly debug_details?: Record<string, unknown>;
+
+	constructor(
+		message: string,
+		options?: {
+			code?: number;
+			errorType?: string;
+			debug_details?: Record<string, unknown>;
+		},
+	) {
+		super(message);
+		this.name = "ApiError";
+		this.code = options?.code;
+		this.errorType = options?.errorType;
+		this.debug_details = options?.debug_details;
+	}
+}
+
 type ApiErrorPayload = {
 	hasError?: boolean;
 	message?: string;
 	errorType?: string;
 	code?: number;
+	debug_details?: Record<string, unknown>;
 };
 
 function getTextMessage(raw_body: string): string | null {
@@ -30,8 +55,13 @@ function toFriendlyErrorMessage(message: string, statusCode?: number): string {
 		return "Unable to connect right now. Check your connection and try again.";
 	}
 
+	// Preserve validation error messages - they contain specific field information
+	if (statusCode === 400 && normalized.includes("missing required fields")) {
+		return cleaned;
+	}
+
 	if (statusCode === 400 || normalized.includes("validation")) {
-		return "Some fields are invalid. Please review your input and try again.";
+		return cleaned;
 	}
 
 	if (statusCode === 404 || normalized.includes("not found")) {
@@ -50,6 +80,10 @@ function toFriendlyErrorMessage(message: string, statusCode?: number): string {
 }
 
 export function getUserFriendlyErrorMessage(error: unknown, fallback_message: string): string {
+	if (error instanceof ApiError) {
+		return toFriendlyErrorMessage(error.message, error.code);
+	}
+
 	if (error instanceof Error) {
 		return toFriendlyErrorMessage(error.message);
 	}
@@ -59,6 +93,16 @@ export function getUserFriendlyErrorMessage(error: unknown, fallback_message: st
 	}
 
 	return fallback_message;
+}
+
+/**
+ * Extracts debug details from an error if available
+ */
+export function getErrorDebugDetails(error: unknown): Record<string, unknown> | undefined {
+	if (error instanceof ApiError) {
+		return error.debug_details;
+	}
+	return undefined;
 }
 
 export async function readApiPayload<T extends ApiErrorPayload>(
@@ -91,11 +135,16 @@ export async function readApiPayload<T extends ApiErrorPayload>(
 	}
 
 	if (!response.ok || payload.hasError) {
-		throw new Error(
+		throw new ApiError(
 			toFriendlyErrorMessage(
 				payload.message ?? getTextMessage(raw_body) ?? fallback_message,
 				payload.code ?? response.status,
 			),
+			{
+				code: payload.code ?? response.status,
+				errorType: payload.errorType,
+				debug_details: payload.debug_details,
+			},
 		);
 	}
 

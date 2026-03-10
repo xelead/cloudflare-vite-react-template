@@ -126,7 +126,6 @@ function ProjectDetailsPage() {
 				<div className="project-header">
 					<div>
 						<h2>Project Overview</h2>
-						<p>Field values mapped from `entityInfo.fields`.</p>
 					</div>
 				</div>
 				{list_fields.map((field) => (
