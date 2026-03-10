@@ -1,15 +1,6 @@
-import { render } from "@src/ui/ssr/render.tsx";
-import type { IAppContext } from "@src/api/fw/api_app_types.ts";
-import { getAllProjects } from "@src/api/modules/projects/projects_store.ts";
+import { define_ssr_route } from "@src/api/fw/ssr/entity_ssr_route_factory.ts";
+import { projects_ssr_handlers } from "@src/api/modules/projects/ssr_actions/projects_ssr_handlers.ts";
 
-export const route = {
-	method: "get",
-	path: "/projects",
-} as const;
+export const route = define_ssr_route("/projects");
 
-export default async function projectsSsrIndex(c: IAppContext) {
-	const db = c.get("coreDb");
-	const { list: projects } = await getAllProjects(db, { pageNumber: 1, pageSize: 20 });
-	const { html } = render(new URL(c.req.url).pathname, { projects, people: [] });
-	return c.html(html);
-}
+export default projects_ssr_handlers.index;

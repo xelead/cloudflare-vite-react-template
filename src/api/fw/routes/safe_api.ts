@@ -4,6 +4,7 @@ import type { Db } from "mongodb";
 
 import { ApiRes, type IApiRequestContext, type IApiResult } from "@src/interfaces/route_types.ts";
 import type { IApiVariables } from "@src/api/fw/api_app_types.ts";
+import { getCoreDbFromExecContext } from "@src/api/db/coredb_exec_context.ts";
 
 class ApiRequestContext implements IApiRequestContext {
 	private c: Context<{ Bindings: Env; Variables: IApiVariables }>;
@@ -39,16 +40,7 @@ class ApiRequestContext implements IApiRequestContext {
 	}
 
 	async getCoreDbAsync(): Promise<Db> {
-		const db = this.c.get("coreDb");
-		if (!db) {
-			throw {
-				code: 500,
-				errorType: "db_unavailable",
-				message: "Database is not available for this request.",
-			};
-		}
-
-		return db;
+		return getCoreDbFromExecContext(this.c);
 	}
 
 	async getRequestDataAsync<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T> {

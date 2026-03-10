@@ -4,6 +4,7 @@ The `src/api/fw` folder contains framework-level backend plumbing such as route
 safety wrappers, CORS handling, environment helpers, repository primitives, and
 common API app types. This is the foundational layer that standardizes how
 modules register routes and return structured results.
+SSR helper factories for module SSR handlers live under `src/api/fw/ssr`.
 
 ## Agent Instructions
 

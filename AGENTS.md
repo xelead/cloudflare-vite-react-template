@@ -19,6 +19,7 @@
 - Use double quotes and semicolons to match existing files.
 - Filenames: `kebab-case` for folders, `PascalCase` for components (e.g., `ProjectsPage.tsx`).
 - Prefer colocating page components under `src/ui/pages/`.
+- Reuse SSR route factories under `src/api/fw/ssr/` for module SSR pages to avoid duplicated handlers.
 
 ## Testing Guidelines
 

@@ -1,17 +1,6 @@
-import { render } from "@src/ui/ssr/render.tsx";
-import type { IAppContext } from "@src/api/fw/api_app_types.ts";
-import { getProjectById } from "@src/api/modules/projects/projects_store.ts";
+import { define_ssr_route } from "@src/api/fw/ssr/entity_ssr_route_factory.ts";
+import { projects_ssr_handlers } from "@src/api/modules/projects/ssr_actions/projects_ssr_handlers.ts";
 
-export const route = {
-	method: "get",
-	path: "/projects/:project_id",
-} as const;
+export const route = define_ssr_route("/projects/:project_id");
 
-export default async function projectsSsrById(c: IAppContext) {
-	const project_id = c.req.param("project_id");
-	const db = c.get("coreDb");
-	const project = project_id ? await getProjectById(db, project_id) : null;
-	const projects = project ? [project] : [];
-	const { html } = render(new URL(c.req.url).pathname, { projects, people: [] });
-	return c.html(html);
-}
+export default projects_ssr_handlers.byId;
