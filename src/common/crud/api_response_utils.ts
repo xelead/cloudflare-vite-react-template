@@ -30,6 +30,11 @@ type ApiErrorPayload = {
 	debug_details?: Record<string, unknown>;
 };
 
+type ApiRequestContext = {
+	request_path?: string;
+	request_method?: string;
+};
+
 function getTextMessage(raw_body: string): string | null {
 	const normalized = raw_body.trim();
 	return normalized.length > 0 ? normalized : null;
@@ -105,9 +110,43 @@ export function getErrorDebugDetails(error: unknown): Record<string, unknown> | 
 	return undefined;
 }
 
+function buildRequestDebugDetails(
+	response: Response,
+	context?: ApiRequestContext,
+): Record<string, unknown> {
+	return {
+		request_path: context?.request_path ?? response.url ?? "unknown",
+		request_method: context?.request_method ?? "GET",
+		status: response.status,
+		status_text: response.statusText,
+	};
+}
+
+export function logClientApiError(
+	error: unknown,
+	context?: {
+		request_path?: string;
+		request_method?: string;
+		operation?: string;
+	},
+): void {
+	const message = error instanceof Error ? error.message : String(error);
+	const debug_details = getErrorDebugDetails(error);
+	console.error("[client-api] Request failed", {
+		operation: context?.operation,
+		request_path: context?.request_path ?? debug_details?.request_path ?? "unknown",
+		request_method: context?.request_method ?? debug_details?.request_method ?? "GET",
+		code: error instanceof ApiError ? error.code : undefined,
+		errorType: error instanceof ApiError ? error.errorType : undefined,
+		message,
+		debug_details,
+	});
+}
+
 export async function readApiPayload<T extends ApiErrorPayload>(
 	response: Response,
 	fallback_message: string,
+	context?: ApiRequestContext,
 ): Promise<T> {
 	const raw_body = await response.text();
 	let payload: T | null = null;
@@ -116,22 +155,29 @@ export async function readApiPayload<T extends ApiErrorPayload>(
 		try {
 			payload = JSON.parse(raw_body) as T;
 		} catch {
-			if (!response.ok) {
-				throw new Error(getTextMessage(raw_body) ?? fallback_message);
-			}
-
-			throw new Error(fallback_message);
+			throw new ApiError(
+				toFriendlyErrorMessage(getTextMessage(raw_body) ?? fallback_message, response.status),
+				{
+					code: response.status,
+					errorType: "invalid_json_payload",
+					debug_details: {
+						...buildRequestDebugDetails(response, context),
+						raw_body_preview: raw_body.slice(0, 500),
+					},
+				},
+			);
 		}
 	}
 
 	if (!payload) {
-		if (!response.ok) {
-			throw new Error(
-				toFriendlyErrorMessage(getTextMessage(raw_body) ?? fallback_message, response.status),
-			);
-		}
-
-		throw new Error(fallback_message);
+		throw new ApiError(
+			toFriendlyErrorMessage(getTextMessage(raw_body) ?? fallback_message, response.status),
+			{
+				code: response.status,
+				errorType: "empty_payload",
+				debug_details: buildRequestDebugDetails(response, context),
+			},
+		);
 	}
 
 	if (!response.ok || payload.hasError) {
@@ -143,7 +189,10 @@ export async function readApiPayload<T extends ApiErrorPayload>(
 			{
 				code: payload.code ?? response.status,
 				errorType: payload.errorType,
-				debug_details: payload.debug_details,
+				debug_details: {
+					...buildRequestDebugDetails(response, context),
+					...(payload.debug_details ?? {}),
+				},
 			},
 		);
 	}

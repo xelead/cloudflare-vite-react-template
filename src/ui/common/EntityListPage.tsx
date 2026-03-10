@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
 	getUserFriendlyErrorMessage,
+	logClientApiError,
 	readApiPayload,
 } from "@src/common/crud/api_response_utils.ts";
 import { DeleteConfirmDialog, useDeleteConfirmation } from "./DeleteConfirmDialog.tsx";
@@ -61,11 +62,15 @@ export function EntityListPage<T extends { id: string }>({
 		}
 
 		set_has_fetched(true);
-		fetch(`/api/${entity_code}`)
+		const request_path = `/api/${entity_code}`;
+		fetch(request_path)
 			.then(async (res) => {
 				const payload = await readApiPayload<
 					{ success: boolean; data?: { list: T[] }; message?: string }
-				>(res, `Failed to load ${entity_code}.`);
+				>(res, `Failed to load ${entity_code}.`, {
+					request_path,
+					request_method: "GET",
+				});
 				return payload.data?.list ?? [];
 			})
 			.then((list) => {
@@ -79,6 +84,11 @@ export function EntityListPage<T extends { id: string }>({
 				set_fetch_error(null);
 			})
 			.catch((error: unknown) => {
+				logClientApiError(error, {
+					operation: `load_${entity_code}_list`,
+					request_path,
+					request_method: "GET",
+				});
 				set_fetch_error(getUserFriendlyErrorMessage(error, `Failed to load ${entity_code}.`));
 			});
 	}, [entity_code, entities.length, has_fetched, initial_data, on_data_change, context_data]);

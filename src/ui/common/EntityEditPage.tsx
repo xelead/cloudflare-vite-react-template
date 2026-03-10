@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
 	getErrorDebugDetails,
 	getUserFriendlyErrorMessage,
+	logClientApiError,
 	readApiPayload,
 } from "@src/common/crud/api_response_utils.ts";
 import {
@@ -102,12 +103,16 @@ export function EntityEditPage({
 
 		let is_cancelled = false;
 		set_is_loading(true);
+		const request_path = `/api/${entity_code}/${encodeURIComponent(id)}`;
 
-		fetch(`/api/${entity_code}/${encodeURIComponent(id)}`)
+		fetch(request_path)
 			.then(async (res) => {
 				const payload = await readApiPayload<
 					{ success: boolean; data?: Record<string, unknown>; message?: string }
-				>(res, `Failed to load ${entity_code}.`);
+				>(res, `Failed to load ${entity_code}.`, {
+					request_path,
+					request_method: "GET",
+				});
 				if (!payload.data) {
 					throw new Error(payload.message ?? `${entity_type_name} not found.`);
 				}
@@ -128,6 +133,11 @@ export function EntityEditPage({
 				if (is_cancelled) {
 					return;
 				}
+				logClientApiError(error, {
+					operation: `load_${entity_code}_edit`,
+					request_path,
+					request_method: "GET",
+				});
 				set_entity(null);
 				set_error_message(getUserFriendlyErrorMessage(error, `Failed to load ${entity_code}.`));
 				set_error_debug_details(getErrorDebugDetails(error) ?? null);
@@ -248,7 +258,8 @@ export function EntityEditPage({
 			return;
 		}
 
-		fetch(`/api/${entity_code}/${encodeURIComponent(id)}`, {
+		const request_path = `/api/${entity_code}/${encodeURIComponent(id)}`;
+		fetch(request_path, {
 			method: "PATCH",
 			headers: {
 				"content-type": "application/json",
@@ -258,7 +269,10 @@ export function EntityEditPage({
 			.then(async (res) => {
 				const payload = await readApiPayload<
 					{ success: boolean; data?: Record<string, unknown>; message?: string }
-				>(res, `Failed to update ${entity_code}.`);
+				>(res, `Failed to update ${entity_code}.`, {
+					request_path,
+					request_method: "PATCH",
+				});
 				if (!payload.data) {
 					throw new Error(payload.message ?? `Failed to update ${entity_code}.`);
 				}
@@ -271,6 +285,11 @@ export function EntityEditPage({
 				navigate(`/${entity_code}/${id}`);
 			})
 			.catch((error: unknown) => {
+				logClientApiError(error, {
+					operation: `update_${entity_code}`,
+					request_path,
+					request_method: "PATCH",
+				});
 				set_error_message(getUserFriendlyErrorMessage(error, `Failed to update ${entity_code}.`));
 				set_error_debug_details(getErrorDebugDetails(error) ?? null);
 			})

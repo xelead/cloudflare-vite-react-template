@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { getUserFriendlyErrorMessage } from "@src/common/crud/api_response_utils.ts";
+import { getUserFriendlyErrorMessage, logClientApiError } from "@src/common/crud/api_response_utils.ts";
 
 export interface DeleteConfirmDialogProps<T> {
 	/** The entity being deleted */
@@ -94,9 +94,10 @@ export function useDeleteConfirmation<T extends { id: string }>(
 
 		set_is_deleting(true);
 		set_error_message(null);
+		const request_path = delete_api_path(delete_candidate.id);
 
 		try {
-			const response = await fetch(delete_api_path(delete_candidate.id), {
+			const response = await fetch(request_path, {
 				method: "DELETE",
 			});
 
@@ -110,6 +111,11 @@ export function useDeleteConfirmation<T extends { id: string }>(
 			on_success(delete_candidate.id);
 			set_delete_candidate(null);
 		} catch (error) {
+			logClientApiError(error, {
+				operation: "delete_entity",
+				request_path,
+				request_method: "DELETE",
+			});
 			set_error_message(
 				getUserFriendlyErrorMessage(error, `Failed to delete ${delete_candidate.id}.`),
 			);
