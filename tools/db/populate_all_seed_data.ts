@@ -76,7 +76,8 @@ async function populate_all_seed_data() {
 	const file_names = await getSeedFileNames();
 	if (file_names.length <= 0) throw new Error("No seed file found.");
 
-	const db: Db = await connectToCoreDb();
+	const dbClient = await connectToCoreDb()
+	const db: Db = dbClient.db
 	const started_at = DateTimeUtils.getCurrentDateTimeUtc();
 	let is_successful = false;
 
@@ -93,7 +94,7 @@ async function populate_all_seed_data() {
 			startedAt: started_at,
 			endedAt: DateTimeUtils.getCurrentDateTimeUtc(),
 		});
-		await disconnectCoreClient();
+		await disconnectCoreClient(dbClient);
 	}
 }
 

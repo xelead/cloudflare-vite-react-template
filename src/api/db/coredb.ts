@@ -36,17 +36,16 @@ function normalize_mongo_url(url: string): string {
 	return parsed.toString();
 }
 
-function create_mongo_client(url: string): Promise<MongoClient> {
-	return import("mongodb").then(({ MongoClient }) => {
-		const client_options = {
-			serverSelectionTimeoutMS: 10000,
-			connectTimeoutMS: 10000,
-			socketTimeoutMS: 15000,
-			maxPoolSize: 5,
-			minPoolSize: 0,
-		};
-		return new MongoClient(url, client_options as never);
-	});
+async function create_mongo_client(url: string): Promise<MongoClient> {
+	const {MongoClient} = await import("mongodb");
+	const client_options = {
+		serverSelectionTimeoutMS: 10000,
+		connectTimeoutMS: 10000,
+		socketTimeoutMS: 15000,
+		maxPoolSize: 5,
+		minPoolSize: 0,
+	};
+	return new MongoClient(url, client_options as never);
 }
 
 export type CoreDbSession = {
@@ -73,3 +72,16 @@ export const connectToCoreDbSession = async (): Promise<CoreDbSession> => {
 	const url = await getEnvString("XE_CORE_DB_URL");
 	return connect_to_database(url);
 };
+
+// Alias for backward compatibility
+export const connectToCoreDb = connectToCoreDbSession;
+
+export async function disconnectCoreClient(client:CoreDbSession): Promise<void> {
+	if (!client) return Promise.resolve();
+	if (!client.db) return Promise.resolve();
+	try {
+		await client.close();
+	} catch (e) {
+		console.error("Error disconnecting from core database:", e);
+	}
+}       

@@ -2,7 +2,7 @@ import type { Db } from "mongodb";
 import fs from "node:fs";
 import path from "node:path";
 import MongoDbRepo from "../../src/api/fw/db/mongo_repo.ts";
-import { connectToCoreDb } from "../../src/api/db/coredb.ts";
+import {connectToCoreDb, disconnectCoreClient} from "../../src/api/db/coredb.ts";
 
 let did_load_env = false;
 
@@ -91,8 +91,12 @@ async function populateCoreDb(rows: any[], collectionName: string) {
 	loadNodeEnvFilesOnce();
 	console.log(`Populating ${collectionName}`);
 	validateIds(collectionName, rows);
-	const db = await connectToCoreDb();
-	await populateDb(db, rows, collectionName);
+	const dbClient = await connectToCoreDb();
+	await populateDb(dbClient.db, rows, collectionName);
+	await disconnectCoreClient(dbClient);
+	console.log(
+		`Populated ${collectionName} with ${rows.length} rows`,
+	);
 }
 
 export { populateCoreDb };
