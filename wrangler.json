@@ -21,6 +21,14 @@
 	},
 	"env": {
 		"production": {
+			"vars": {
+				"EMAIL_PROVIDER": "ses",
+				"NOTIFY_FROM_EMAIL": "website@xelead.com",
+				"NOTIFY_TO_EMAIL": "dev@xelead.com",
+				"NEXT_PUBLIC_ASSETS_BASE_URL": "https://cdn1.headshotprime.com",
+				"NEXT_PUBLIC_API_BASE_URL": "https://headshotprime.com/api",
+				"AWS_REGION": "us-west-2"
+			},
 			"secrets_store_secrets": [
 				{
 					"binding": "POSTMARK_SERVER_TOKEN",
