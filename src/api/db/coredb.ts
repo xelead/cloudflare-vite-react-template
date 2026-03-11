@@ -29,7 +29,9 @@ function normalize_mongo_url(url: string): string {
 		parsed.hostname = "127.0.0.1";
 	}
 
-	if (!parsed.searchParams.has("directConnection")) {
+	// set direct connection for localhost because it fails the dev server if we don't add
+	if (parsed.hostname == "127.0.0.1" && 
+		!parsed.searchParams.has("directConnection")) {
 		parsed.searchParams.set("directConnection", "true");
 	}
 
