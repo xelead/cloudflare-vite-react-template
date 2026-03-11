@@ -50,5 +50,14 @@ export async function getCoreDbFromExecContext(c: IAppContext): Promise<Db> {
 }
 
 export async function closeCoreDbFromExecContext(c: IAppContext): Promise<void> {
+	const state = core_db_state_by_exec_ctx.get(c.executionCtx);
+	if (!state) return;
+
 	core_db_state_by_exec_ctx.delete(c.executionCtx);
+
+	const session =
+		state.session ?? (state.pendingSession ? await state.pendingSession.catch(() => null) : null);
+	if (!session) return;
+
+	await session.close();
 }
