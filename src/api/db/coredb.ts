@@ -50,7 +50,10 @@ async function create_mongo_client(url: string): Promise<MongoClient> {
 		maxPoolSize: 5,
 		minPoolSize: 0,
 	};
-	return new MongoClient(url, client_options as never);
+	const client = new MongoClient(url, client_options as never);
+	const event_emitter_client = client as unknown as { setMaxListeners?: (count: number) => void };
+	event_emitter_client.setMaxListeners?.(50);
+	return client;
 }
 
 export type CoreDbSession = {
