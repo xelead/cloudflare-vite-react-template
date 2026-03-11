@@ -1,5 +1,7 @@
 import type { Db, MongoClient } from "mongodb";
-import { getEnvString } from "../fw/config/env_helpers.ts";
+import { getEnvBoolean, getEnvString } from "../fw/config/env_helpers.ts";
+
+import dns from "node:dns";
 
 function get_db_name_from_url(url: string): string {
 	let parsed: URL;
@@ -30,8 +32,10 @@ function normalize_mongo_url(url: string): string {
 	}
 
 	// set direct connection for localhost because it fails the dev server if we don't add
-	if (parsed.hostname == "127.0.0.1" && 
-		!parsed.searchParams.has("directConnection")) {
+	if (
+		parsed.hostname == "127.0.0.1" &&
+		!parsed.searchParams.has("directConnection")
+	) {
 		parsed.searchParams.set("directConnection", "true");
 	}
 
@@ -39,7 +43,14 @@ function normalize_mongo_url(url: string): string {
 }
 
 async function create_mongo_client(url: string): Promise<MongoClient> {
-	const {MongoClient} = await import("mongodb");
+	const { MongoClient } = await import("mongodb");
+
+	const use_public_dns = await getEnvBoolean("FORCE_PUBLIC_DNS");
+	if (use_public_dns) {
+		console.log("Using public DNS servers for MongoDB connection.");
+		dns.setServers(["1.1.1.1", "8.8.8.8"]);
+	}
+
 	const client_options = {
 		serverSelectionTimeoutMS: 10000,
 		connectTimeoutMS: 10000,
@@ -78,7 +89,9 @@ export const connectToCoreDbSession = async (): Promise<CoreDbSession> => {
 // Alias for backward compatibility
 export const connectToCoreDb = connectToCoreDbSession;
 
-export async function disconnectCoreClient(client:CoreDbSession): Promise<void> {
+export async function disconnectCoreClient(
+	client: CoreDbSession,
+): Promise<void> {
 	if (!client) return Promise.resolve();
 	if (!client.db) return Promise.resolve();
 	try {
@@ -86,4 +99,4 @@ export async function disconnectCoreClient(client:CoreDbSession): Promise<void> 
 	} catch (e) {
 		console.error("Error disconnecting from core database:", e);
 	}
-}       
+}
