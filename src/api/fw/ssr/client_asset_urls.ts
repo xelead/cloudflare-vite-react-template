@@ -65,7 +65,13 @@ async function load_client_asset_urls(c: IAppContext): Promise<ClientAssetUrls> 
 	const index_url = new URL("/index.html", c.req.url).toString();
 	let index_response: Response;
 	try {
-		index_response = await assets.fetch(index_url);
+		const asset_request = new Request(index_url, {
+			method: "GET",
+			headers: {
+				accept: "text/html",
+			},
+		});
+		index_response = await assets.fetch(asset_request);
 	} catch (error) {
 		console.warn(
 			"Failed to fetch index.html from assets binding. SSR will render without hydration script.",
