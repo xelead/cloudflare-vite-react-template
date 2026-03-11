@@ -5,6 +5,7 @@
 - `npm install`: Install dependencies.
 - `npm run dev`: Start Vite dev server (http://localhost:5173).
 - `npm run build`: Type-check and build client/SSR bundles.
+- Build output uses deterministic client asset names (`/assets/index.js`) configured in `vite.config.ts` for SSR compatibility.
 - `npm run preview`: Build and serve the production bundle locally.
 - `npm run deploy`: Deploy to Cloudflare Workers via Wrangler.
 - `npm run check`: Type-check, build, and run a deploy dry-run.

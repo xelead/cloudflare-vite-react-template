@@ -6,6 +6,15 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 export default defineConfig({
 	plugins: [react(), cloudflare()],
 	cacheDir: "node_modules/.vite_cf_dev",
+	build: {
+		rollupOptions: {
+			output: {
+				entryFileNames: "assets/[name].js",
+				chunkFileNames: "assets/[name].js",
+				assetFileNames: "assets/[name][extname]",
+			},
+		},
+	},
 	optimizeDeps: {
 		exclude: ["mongodb"],
 		include: ["punycode", "punycode/", "tr46", "whatwg-url"],
