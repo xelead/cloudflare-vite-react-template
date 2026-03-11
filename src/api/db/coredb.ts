@@ -63,6 +63,10 @@ export type CoreDbSession = {
 
 let cached_core_db_session: CoreDbSession | null = null;
 let cached_core_db_session_promise: Promise<CoreDbSession> | null = null;
+let cached_connect_error: Error | null = null;
+let cached_connect_error_at_ms = 0;
+
+const CONNECT_RETRY_COOLDOWN_MS = 30_000;
 
 const connect_to_database = async (url: string): Promise<CoreDbSession> => {
 	if (!url) throw new Error("Missing XE_CORE_DB_URL.");
@@ -97,11 +101,33 @@ export const connectToCoreDbSession = async (): Promise<CoreDbSession> => {
 		return cached_core_db_session_promise;
 	}
 
+	if (
+		cached_connect_error &&
+		Date.now() - cached_connect_error_at_ms < CONNECT_RETRY_COOLDOWN_MS
+	) {
+		const seconds_remaining = Math.ceil(
+			(CONNECT_RETRY_COOLDOWN_MS - (Date.now() - cached_connect_error_at_ms)) / 1000,
+		);
+		throw new Error(
+			`Core DB temporarily unavailable. Retrying in ${seconds_remaining}s. Last error: ${cached_connect_error.message}`,
+		);
+	}
+
 	const url = await getEnvString("XE_CORE_DB_URL");
 	cached_core_db_session_promise = connect_to_database(url)
 		.then((session) => {
 			cached_core_db_session = session;
+			cached_connect_error = null;
+			cached_connect_error_at_ms = 0;
 			return session;
+		})
+		.catch((error: unknown) => {
+			const normalized_error = error instanceof Error
+				? error
+				: new Error(typeof error === "string" ? error : "Failed to connect to core DB.");
+			cached_connect_error = normalized_error;
+			cached_connect_error_at_ms = Date.now();
+			throw normalized_error;
 		})
 		.finally(() => {
 			cached_core_db_session_promise = null;
@@ -129,6 +155,8 @@ export async function disconnectCachedCoreDbSession(): Promise<void> {
 	const session = cached_core_db_session;
 	cached_core_db_session = null;
 	cached_core_db_session_promise = null;
+	cached_connect_error = null;
+	cached_connect_error_at_ms = 0;
 	if (!session) return;
 
 	await disconnectCoreClient(session);
