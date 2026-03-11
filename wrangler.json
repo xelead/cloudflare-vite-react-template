@@ -9,7 +9,8 @@
 	},
 	"upload_source_maps": true,
 	"assets": {
-		"directory": "./dist/client"
+		"directory": "./dist/client",
+		"binding": "ASSETS"
 	},
 	"vars": {
 		"EMAIL_PROVIDER": "ses",
