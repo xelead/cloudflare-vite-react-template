@@ -91,9 +91,9 @@ async function populateCoreDb(rows: any[], collectionName: string) {
 	loadNodeEnvFilesOnce();
 	console.log(`Populating ${collectionName}`);
 	validateIds(collectionName, rows);
-	const dbClient = await connectToCoreDb();
-	await populateDb(dbClient.db, rows, collectionName);
-	await disconnectCoreClient(dbClient);
+	const dbSession = await connectToCoreDb();
+	await populateDb(dbSession.db, rows, collectionName);
+	await disconnectCoreClient(dbSession);
 	console.log(
 		`Populated ${collectionName} with ${rows.length} rows`,
 	);

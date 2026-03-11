@@ -4,6 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { connectToCoreDb, disconnectCoreClient } from "../../src/api/db/coredb.ts";
 import DateTimeUtils from "../../src/common/utils/date_time_utils.ts";
+import {apply_public_dns_servers} from "./db_utils";
 
 type SeedModule = {
 	default?: { up?: (db: Db) => Promise<void> | void };
@@ -73,11 +74,12 @@ async function loadAndRunSeedFile(db: Db, filePath: string) {
 
 async function populate_all_seed_data() {
 	loadNodeEnvFiles();
+	await apply_public_dns_servers();
 	const file_names = await getSeedFileNames();
 	if (file_names.length <= 0) throw new Error("No seed file found.");
 
-	const dbClient = await connectToCoreDb()
-	const db: Db = dbClient.db
+	const dbSession = await connectToCoreDb()
+	const db: Db = dbSession.db
 	const started_at = DateTimeUtils.getCurrentDateTimeUtc();
 	let is_successful = false;
 
@@ -94,7 +96,7 @@ async function populate_all_seed_data() {
 			startedAt: started_at,
 			endedAt: DateTimeUtils.getCurrentDateTimeUtc(),
 		});
-		await disconnectCoreClient(dbClient);
+		await disconnectCoreClient(dbSession);
 	}
 }
 
