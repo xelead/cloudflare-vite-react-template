@@ -4,6 +4,7 @@ import type { IAppContext } from "@src/api/fw/api_app_types.ts";
 import { getCoreDbFromExecContext } from "@src/api/db/coredb_exec_context.ts";
 import { render } from "@src/ui/ssr/render.tsx";
 import type { AppInitialData } from "@src/ui/types/app_initial_data.ts";
+import { resolve_client_asset_urls } from "@src/api/fw/ssr/client_asset_urls.ts";
 
 type ListFetcherInput = {
 	pageNumber: number;
@@ -35,12 +36,17 @@ type EntitySsrHandlers = {
 
 const DEFAULT_PAGE_SIZE = 20;
 
-function render_ssr_html<TEntity>(
+async function render_ssr_html<TEntity>(
 	c: IAppContext,
 	entities: TEntity[],
 	to_initial_data: InitialDataMapper<TEntity>,
-): Response {
-	const { html } = render(new URL(c.req.url).pathname, to_initial_data(entities));
+): Promise<Response> {
+	const client_assets = await resolve_client_asset_urls(c);
+	const { html } = render(
+		new URL(c.req.url).pathname,
+		to_initial_data(entities),
+		client_assets,
+	);
 	return c.html(html);
 }
 
@@ -54,21 +60,21 @@ export function create_entity_ssr_handlers<TEntity>(
 				pageNumber: 1,
 				pageSize: config.pageSize ?? DEFAULT_PAGE_SIZE,
 			});
-			return render_ssr_html(c, list, config.toInitialData);
+			return await render_ssr_html(c, list, config.toInitialData);
 		},
 		byId: async (c: IAppContext) => {
 			const db = await getCoreDbFromExecContext(c);
 			const entity_id = c.req.param(config.byIdParamName);
 			const entity = entity_id ? await config.getById(db, entity_id) : null;
 			const entities = entity ? [entity] : [];
-			return render_ssr_html(c, entities, config.toInitialData);
+			return await render_ssr_html(c, entities, config.toInitialData);
 		},
 		edit: async (c: IAppContext) => {
 			const db = await getCoreDbFromExecContext(c);
 			const entity_id = c.req.param(config.byIdParamName);
 			const entity = entity_id ? await config.getById(db, entity_id) : null;
 			const entities = entity ? [entity] : [];
-			return render_ssr_html(c, entities, config.toInitialData);
+			return await render_ssr_html(c, entities, config.toInitialData);
 		},
 	};
 }

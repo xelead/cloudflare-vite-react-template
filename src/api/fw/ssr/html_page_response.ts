@@ -1,6 +1,7 @@
 import type { IAppContext } from "@src/api/fw/api_app_types.ts";
 import { render } from "@src/ui/ssr/render.tsx";
 import type { AppInitialData } from "@src/ui/types/app_initial_data.ts";
+import { resolve_client_asset_urls } from "@src/api/fw/ssr/client_asset_urls.ts";
 
 const empty_initial_data: AppInitialData = {
 	projects: [],
@@ -17,11 +18,12 @@ export function is_html_document_request(c: IAppContext): boolean {
 	return accept.includes("text/html") || accept.includes("application/xhtml+xml");
 }
 
-export function render_html_page(
+export async function render_html_page(
 	c: IAppContext,
 	path: string,
 	status: 200 | 404 | 500 = 200,
-): Response {
-	const { html } = render(path, empty_initial_data);
+): Promise<Response> {
+	const client_assets = await resolve_client_asset_urls(c);
+	const { html } = render(path, empty_initial_data, client_assets);
 	return c.html(html, status);
 }

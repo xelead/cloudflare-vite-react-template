@@ -23,19 +23,24 @@ function Document({
 	children,
 	initialData,
 	styles,
+	moduleScriptSrc,
+	stylesheetHrefs,
 }: {
 	children: ReactNode;
 	initialData: string;
 	styles: string;
+	moduleScriptSrc: string | null;
+	stylesheetHrefs: string[];
 }) {
-	const client_entry_url = import.meta.env.DEV ? "/src/ui/main.tsx" : "/assets/main.js";
-
 	return (
 		<html lang="en">
 			<head>
 				<meta charSet="UTF-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<link rel="icon" type="image/svg+xml" href="/vite.svg" />
+				{stylesheetHrefs.map((href) => (
+					<link key={href} rel="stylesheet" href={href} />
+				))}
 				<style>{styles}</style>
 				{import.meta.env.DEV && (
 					<script type="module" dangerouslySetInnerHTML={{ __html: react_refresh_preamble }} />
@@ -48,13 +53,20 @@ function Document({
 						__html: `window.__INITIAL_DATA__ = ${initialData};`,
 					}}
 				/>
-				<script type="module" src={client_entry_url}></script>
+				{moduleScriptSrc && <script type="module" src={moduleScriptSrc}></script>}
 			</body>
 		</html>
 	);
 }
 
-export function render(url: string, data: AppInitialData): RenderResult {
+export function render(
+	url: string,
+	data: AppInitialData,
+	clientAssets: {
+		moduleScriptSrc: string | null;
+		stylesheetHrefs: string[];
+	},
+): RenderResult {
 	const resolved_data: AppInitialData = {
 		projects: data.projects ?? [],
 		people: data.people ?? [],
@@ -63,7 +75,12 @@ export function render(url: string, data: AppInitialData): RenderResult {
 	const styles = `${baseStyles}\n${appStyles}`;
 
 	const appHtml = renderToString(
-		<Document initialData={initialData} styles={styles}>
+		<Document
+			initialData={initialData}
+			styles={styles}
+			moduleScriptSrc={clientAssets.moduleScriptSrc}
+			stylesheetHrefs={clientAssets.stylesheetHrefs}
+		>
 			<ProjectsDataProvider data={{ projects: resolved_data.projects }}>
 				<PeopleDataProvider data={{ people: resolved_data.people }}>
 					<StaticRouter location={url}>
