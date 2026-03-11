@@ -3,6 +3,11 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { cloudflare } from "@cloudflare/vite-plugin";
 
+process.on("warning", (warning) => {
+	console.error("NODE WARNING:", warning.name, warning.message);
+	console.error(warning.stack);
+});
+
 export default defineConfig({
 	plugins: [react(), cloudflare()],
 	cacheDir: "node_modules/.vite_cf_dev",
