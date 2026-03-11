@@ -52,7 +52,10 @@ register_dynamic_routes(app);
 
 app.notFound((c) => {
 	if (is_html_document_request(c)) {
-		return render_html_page(c, c.req.path, 404);
+		return render_html_page(c, c.req.path, 404).catch((error) => {
+			console.error("SSR notFound render failed:", error);
+			return c.text("Not Found", 404);
+		});
 	}
 
 	return c.text("Not Found", 404);
@@ -61,7 +64,10 @@ app.notFound((c) => {
 app.onError((error, c) => {
 	console.error("Unhandled server error:", error);
 	if (is_html_document_request(c)) {
-		return render_html_page(c, "/500", 500);
+		return render_html_page(c, "/500", 500).catch((render_error) => {
+			console.error("SSR error page render failed:", render_error);
+			return c.text("Internal server error.", 500);
+		});
 	}
 
 	return c.json(

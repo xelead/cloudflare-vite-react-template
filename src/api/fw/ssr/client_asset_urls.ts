@@ -36,6 +36,15 @@ export async function resolve_client_asset_urls(
 			cached_asset_urls = result;
 			return result;
 		})
+		.catch((error) => {
+			console.error("Failed to resolve client asset URLs for SSR:", error);
+			const fallback = {
+				moduleScriptSrc: null,
+				stylesheetHrefs: [],
+			};
+			cached_asset_urls = fallback;
+			return fallback;
+		})
 		.finally(() => {
 			cached_asset_urls_promise = null;
 		});
@@ -54,7 +63,19 @@ async function load_client_asset_urls(c: IAppContext): Promise<ClientAssetUrls> 
 	}
 
 	const index_url = new URL("/index.html", c.req.url).toString();
-	const index_response = await assets.fetch(index_url);
+	let index_response: Response;
+	try {
+		index_response = await assets.fetch(index_url);
+	} catch (error) {
+		console.warn(
+			"Failed to fetch index.html from assets binding. SSR will render without hydration script.",
+			error,
+		);
+		return {
+			moduleScriptSrc: null,
+			stylesheetHrefs: [],
+		};
+	}
 	if (!index_response.ok) {
 		console.warn(
 			`Failed to load index.html from assets binding (status ${index_response.status}). SSR will render without hydration script.`,
@@ -65,7 +86,19 @@ async function load_client_asset_urls(c: IAppContext): Promise<ClientAssetUrls> 
 		};
 	}
 
-	const index_html = await index_response.text();
+	let index_html = "";
+	try {
+		index_html = await index_response.text();
+	} catch (error) {
+		console.warn(
+			"Failed to read index.html from assets binding response. SSR will render without hydration script.",
+			error,
+		);
+		return {
+			moduleScriptSrc: null,
+			stylesheetHrefs: [],
+		};
+	}
 	const module_script_src = get_module_script_src(index_html);
 	if (!module_script_src) {
 		console.warn(

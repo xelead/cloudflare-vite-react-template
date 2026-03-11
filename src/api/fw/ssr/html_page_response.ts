@@ -23,7 +23,23 @@ export async function render_html_page(
 	path: string,
 	status: 200 | 404 | 500 = 200,
 ): Promise<Response> {
-	const client_assets = await resolve_client_asset_urls(c);
-	const { html } = render(path, empty_initial_data, client_assets);
-	return c.html(html, status);
+	try {
+		const client_assets = await resolve_client_asset_urls(c);
+		const { html } = render(path, empty_initial_data, client_assets);
+		return c.html(html, status);
+	} catch (error) {
+		console.error("SSR HTML render failed:", {
+			path,
+			status,
+			error,
+		});
+
+		const fallback_title = status === 500 ? "Internal Server Error" : "Not Found";
+		const fallback_body = status === 500
+			? "Something went wrong while rendering this page."
+			: "The requested page could not be found.";
+		const fallback_html =
+			`<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${fallback_title}</title></head><body><main><h1>${fallback_title}</h1><p>${fallback_body}</p></main></body></html>`;
+		return c.html(fallback_html, status);
+	}
 }
