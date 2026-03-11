@@ -69,7 +69,16 @@ const connect_to_database = async (url: string): Promise<CoreDbSession> => {
 	const normalized_url = normalize_mongo_url(url);
 	const db_name = get_db_name_from_url(normalized_url);
 	const client = await create_mongo_client(normalized_url);
-	await client.connect();
+	try {
+		await client.connect();
+	} catch (error) {
+		try {
+			await client.close();
+		} catch (close_error) {
+			console.error("Failed to close Mongo client after connect error:", close_error);
+		}
+		throw error;
+	}
 
 	return {
 		db: client.db(db_name),
