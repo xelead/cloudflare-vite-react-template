@@ -1,8 +1,6 @@
 import type { Db, MongoClient } from "mongodb";
 import { getEnvBoolean, getEnvString } from "../fw/config/env_helpers.ts";
 
-import dns from "node:dns";
-
 function get_db_name_from_url(url: string): string {
 	let parsed: URL;
 	try {
@@ -48,7 +46,7 @@ async function create_mongo_client(url: string): Promise<MongoClient> {
 	const use_public_dns = await getEnvBoolean("FORCE_PUBLIC_DNS");
 	if (use_public_dns) {
 		console.log("Using public DNS servers for MongoDB connection.");
-		dns.setServers(["1.1.1.1", "8.8.8.8"]);
+		await apply_public_dns_servers();
 	}
 
 	const client_options = {
@@ -59,6 +57,18 @@ async function create_mongo_client(url: string): Promise<MongoClient> {
 		minPoolSize: 0,
 	};
 	return new MongoClient(url, client_options as never);
+}
+
+async function apply_public_dns_servers(): Promise<void> {
+	try {
+		const dns = await import("dns");
+		dns.setServers(["1.1.1.1", "8.8.8.8"]);
+		return;
+	} catch {
+		console.warn(
+			"FORCE_PUBLIC_DNS is enabled, but DNS APIs are unavailable in this runtime.",
+		);
+	}
 }
 
 export type CoreDbSession = {
