@@ -5,6 +5,7 @@
 - `npm install`: Install dependencies.
 - `npm run dev`: Start Vite dev server (http://localhost:5173).
 - `npm run build`: Type-check and build client/SSR bundles.
+- Build output uses deterministic client asset names (`/assets/index.js`) configured in `vite.config.ts` for SSR compatibility.
 - `npm run preview`: Build and serve the production bundle locally.
 - `npm run deploy`: Deploy to Cloudflare Workers via Wrangler.
 - `npm run check`: Type-check, build, and run a deploy dry-run.
@@ -20,6 +21,7 @@
 - Filenames: `kebab-case` for folders, `PascalCase` for components (e.g., `ProjectsPage.tsx`).
 - Prefer colocating page components under `src/ui/pages/`.
 - Reuse SSR route factories under `src/api/fw/ssr/` for module SSR pages to avoid duplicated handlers.
+- Shared UI entity data providers/hooks live in `src/ui/common/entities_data.tsx` (avoid per-module duplicates).
 
 ## Testing Guidelines
 

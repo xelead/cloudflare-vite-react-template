@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import { renderToString } from "react-dom/server";
 import { StaticRouter } from "react-router-dom/server";
 import App from "@src/ui/app";
-import { PeopleDataProvider } from "@src/ui/modules/people/people_data.tsx";
-import { ProjectsDataProvider } from "@src/ui/modules/projects/projects_data.tsx";
+import { PeopleDataProvider, ProjectsDataProvider } from "@src/ui/common/entities_data.tsx";
 import type { AppInitialData } from "@src/ui/types/app_initial_data.ts";
 import appStyles from "@src/ui/app.css?raw";
 import baseStyles from "@src/ui/index.css?raw";
@@ -24,10 +23,14 @@ function Document({
 	children,
 	initialData,
 	styles,
+	moduleScriptSrc,
+	stylesheetHrefs,
 }: {
 	children: ReactNode;
 	initialData: string;
 	styles: string;
+	moduleScriptSrc: string | null;
+	stylesheetHrefs: string[];
 }) {
 	return (
 		<html lang="en">
@@ -35,6 +38,9 @@ function Document({
 				<meta charSet="UTF-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<link rel="icon" type="image/svg+xml" href="/vite.svg" />
+				{stylesheetHrefs.map((href) => (
+					<link key={href} rel="stylesheet" href={href} />
+				))}
 				<style>{styles}</style>
 				{import.meta.env.DEV && (
 					<script type="module" dangerouslySetInnerHTML={{ __html: react_refresh_preamble }} />
@@ -47,13 +53,20 @@ function Document({
 						__html: `window.__INITIAL_DATA__ = ${initialData};`,
 					}}
 				/>
-				<script type="module" src="/src/ui/main.tsx"></script>
+				{moduleScriptSrc && <script type="module" src={moduleScriptSrc}></script>}
 			</body>
 		</html>
 	);
 }
 
-export function render(url: string, data: AppInitialData): RenderResult {
+export function render(
+	url: string,
+	data: AppInitialData,
+	clientAssets: {
+		moduleScriptSrc: string | null;
+		stylesheetHrefs: string[];
+	},
+): RenderResult {
 	const resolved_data: AppInitialData = {
 		projects: data.projects ?? [],
 		people: data.people ?? [],
@@ -62,7 +75,12 @@ export function render(url: string, data: AppInitialData): RenderResult {
 	const styles = `${baseStyles}\n${appStyles}`;
 
 	const appHtml = renderToString(
-		<Document initialData={initialData} styles={styles}>
+		<Document
+			initialData={initialData}
+			styles={styles}
+			moduleScriptSrc={clientAssets.moduleScriptSrc}
+			stylesheetHrefs={clientAssets.stylesheetHrefs}
+		>
 			<ProjectsDataProvider data={{ projects: resolved_data.projects }}>
 				<PeopleDataProvider data={{ people: resolved_data.people }}>
 					<StaticRouter location={url}>

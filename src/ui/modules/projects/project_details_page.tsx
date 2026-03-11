@@ -1,5 +1,5 @@
 import { EntityViewPage } from "@src/ui/common/index.ts";
-import { useProjectsData } from "@src/ui/modules/projects/projects_data.tsx";
+import { useProjectsData } from "@src/ui/common/entities_data.tsx";
 
 function ProjectDetailsPage() {
 	const { data } = useProjectsData();

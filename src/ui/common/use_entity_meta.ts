@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { readApiPayload } from "@src/common/crud/api_response_utils.ts";
+import { getUserFriendlyErrorMessage, logClientApiError, readApiPayload } from "@src/common/crud/api_response_utils.ts";
 import type { ClientEntityField, ClientEntityMeta, EntityMetaApiResponse } from "./entity_utils.ts";
 
 // Global cache for entity metadata by entity code
@@ -21,11 +21,16 @@ async function fetch_entity_meta(entity_code: string): Promise<ClientEntityMeta>
 		return pending;
 	}
 
-	const request = fetch(`/api/${entity_code}/meta`)
+	const request_path = `/api/${entity_code}/meta`;
+	const request = fetch(request_path)
 		.then(async (res) => {
 			const payload = await readApiPayload<EntityMetaApiResponse>(
 				res,
 				`Failed to load ${entity_code} field metadata.`,
+				{
+					request_path,
+					request_method: "GET",
+				},
 			);
 			if (!payload.data) {
 				throw new Error(payload.message ?? `${entity_code} metadata payload is missing.`);
@@ -86,8 +91,16 @@ export function use_entity_meta(entity_code: string): UseEntityMetaResult {
 				if (is_cancelled) {
 					return;
 				}
+				logClientApiError(error, {
+					operation: `load_${entity_code}_meta`,
+					request_path: `/api/${entity_code}/meta`,
+					request_method: "GET",
+				});
 				setErrorMessage(
-					error instanceof Error ? error.message : `Failed to load ${entity_code} field metadata.`,
+					getUserFriendlyErrorMessage(
+						error,
+						`Failed to load ${entity_code} field metadata.`,
+					),
 				);
 			})
 			.finally(() => {
@@ -116,7 +129,7 @@ export function use_entity_meta(entity_code: string): UseEntityMetaResult {
 
 /**
  * Factory function that creates a hook bound to a specific entity code.
- * Useful for creating entity-specific hooks like use_project_entity_meta.
+ * Useful for creating entity-specific hooks without duplicating fetch/cache logic.
  */
 export function create_use_entity_meta(entity_code: string) {
 	return function use_bound_entity_meta(): UseEntityMetaResult {

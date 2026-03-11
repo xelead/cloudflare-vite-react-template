@@ -29,7 +29,11 @@ function normalize_mongo_url(url: string): string {
 		parsed.hostname = "127.0.0.1";
 	}
 
-	if (!parsed.searchParams.has("directConnection")) {
+	// set direct connection for localhost because it fails the dev server if we don't add
+	if (
+		parsed.hostname == "127.0.0.1" &&
+		!parsed.searchParams.has("directConnection")
+	) {
 		parsed.searchParams.set("directConnection", "true");
 	}
 
@@ -37,7 +41,8 @@ function normalize_mongo_url(url: string): string {
 }
 
 async function create_mongo_client(url: string): Promise<MongoClient> {
-	const {MongoClient} = await import("mongodb");
+	const { MongoClient } = await import("mongodb");
+
 	const client_options = {
 		serverSelectionTimeoutMS: 10000,
 		connectTimeoutMS: 10000,
@@ -58,7 +63,16 @@ const connect_to_database = async (url: string): Promise<CoreDbSession> => {
 	const normalized_url = normalize_mongo_url(url);
 	const db_name = get_db_name_from_url(normalized_url);
 	const client = await create_mongo_client(normalized_url);
-	await client.connect();
+	try {
+		await client.connect();
+	} catch (error) {
+		try {
+			await client.close();
+		} catch (close_error) {
+			console.error("Failed to close Mongo client after connect error:", close_error);
+		}
+		throw error;
+	}
 
 	return {
 		db: client.db(db_name),
@@ -76,7 +90,9 @@ export const connectToCoreDbSession = async (): Promise<CoreDbSession> => {
 // Alias for backward compatibility
 export const connectToCoreDb = connectToCoreDbSession;
 
-export async function disconnectCoreClient(client:CoreDbSession): Promise<void> {
+export async function disconnectCoreClient(
+	client: CoreDbSession,
+): Promise<void> {
 	if (!client) return Promise.resolve();
 	if (!client.db) return Promise.resolve();
 	try {
@@ -84,4 +100,4 @@ export async function disconnectCoreClient(client:CoreDbSession): Promise<void> 
 	} catch (e) {
 		console.error("Error disconnecting from core database:", e);
 	}
-}       
+}

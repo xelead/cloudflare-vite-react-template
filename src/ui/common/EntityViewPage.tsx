@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
 	getUserFriendlyErrorMessage,
+	logClientApiError,
 	readApiPayload,
 } from "@src/common/crud/api_response_utils.ts";
 import { render_field_value } from "./entity_utils.ts";
@@ -69,12 +70,16 @@ export function EntityViewPage({
 		let is_cancelled = false;
 		set_is_loading(true);
 		set_error_message(null);
+		const request_path = `/api/${entity_code}/${encodeURIComponent(id)}`;
 
-		fetch(`/api/${entity_code}/${encodeURIComponent(id)}`)
+		fetch(request_path)
 			.then(async (res) => {
 				const payload = await readApiPayload<
 					{ success: boolean; data?: Record<string, unknown>; message?: string }
-				>(res, `Failed to load ${entity_code}.`);
+				>(res, `Failed to load ${entity_code}.`, {
+					request_path,
+					request_method: "GET",
+				});
 				if (!payload.data) {
 					throw new Error(payload.message ?? `${entity_type_name} not found.`);
 				}
@@ -91,6 +96,11 @@ export function EntityViewPage({
 				if (is_cancelled) {
 					return;
 				}
+				logClientApiError(error, {
+					operation: `load_${entity_code}_details`,
+					request_path,
+					request_method: "GET",
+				});
 				set_entity(null);
 				set_error_message(getUserFriendlyErrorMessage(error, `Failed to load ${entity_code}.`));
 			})

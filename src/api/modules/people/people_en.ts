@@ -1,14 +1,10 @@
-import people_fields_json from "@src/api/modules/people/people_fields.json" assert { type: "json" };
-import {
-	build_entity_fields_from_json,
-	type EntityFieldDefinitionJson,
-} from "@src/common/crud/entity_field_definition_loader.ts";
 import type {
 	IEntityAction,
 	IEntityFieldInfo,
 	IEntityInfo,
 	IEntityStorageInfo,
 } from "@src/common/crud/entity_interfaces.ts";
+import { PEOPLE_FIELDS, PEOPLE_FIELD_ORDER } from "@src/api/modules/people/people_types.ts";
 
 export const entity_res_code = "people";
 
@@ -21,11 +17,10 @@ const people_storage: IEntityStorageInfo = {
 	defaultPageSize: 10,
 };
 
-const people_field_definitions = people_fields_json as EntityFieldDefinitionJson[];
-const people_fields_map = build_entity_fields_from_json(people_field_definitions);
-
-const people_field_keys = people_field_definitions.map((definition) => definition.key);
-const people_fields = people_field_keys.map((field_key) => people_fields_map[field_key]);
+// Build ordered fields array from typed definitions
+const people_fields: IEntityFieldInfo[] = PEOPLE_FIELD_ORDER.map(
+	(key) => PEOPLE_FIELDS[key],
+);
 const people_fields_by_name = people_fields.reduce<Record<string, IEntityFieldInfo>>(
 	(acc, field) => {
 		acc[field.name] = field;

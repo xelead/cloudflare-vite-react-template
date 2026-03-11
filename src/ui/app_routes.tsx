@@ -1,5 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import Home from "@src/ui/pages/home";
+import NotFoundPage from "@src/ui/pages/not_found.tsx";
+import ServerErrorPage from "@src/ui/pages/server_error.tsx";
 import PeoplePage from "@src/ui/modules/people/index.tsx";
 import PersonDetailsPage from "@src/ui/modules/people/person_details_page.tsx";
 import PersonEditPage from "@src/ui/modules/people/person_edit_page.tsx";
@@ -15,6 +17,9 @@ const app_routes = [
 	{ path: "/people", element: <PeoplePage /> },
 	{ path: "/people/:id", element: <PersonDetailsPage /> },
 	{ path: "/people/:id/edit", element: <PersonEditPage /> },
+	{ path: "/404", element: <NotFoundPage /> },
+	{ path: "/500", element: <ServerErrorPage /> },
+	{ path: "*", element: <NotFoundPage /> },
 ];
 
 export default function AppRoutes() {
