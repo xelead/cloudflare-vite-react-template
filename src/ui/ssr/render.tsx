@@ -6,7 +6,6 @@ import { PeopleDataProvider, ProjectsDataProvider } from "@src/ui/common/entitie
 import type { AppInitialData } from "@src/ui/types/app_initial_data.ts";
 import appStyles from "@src/ui/app.css?raw";
 import baseStyles from "@src/ui/index.css?raw";
-import clientEntryUrl from "@src/ui/main.tsx?url";
 
 type RenderResult = {
 	html: string;
@@ -29,6 +28,8 @@ function Document({
 	initialData: string;
 	styles: string;
 }) {
+	const client_entry_url = import.meta.env.DEV ? "/src/ui/main.tsx" : "/assets/main.js";
+
 	return (
 		<html lang="en">
 			<head>
@@ -47,7 +48,7 @@ function Document({
 						__html: `window.__INITIAL_DATA__ = ${initialData};`,
 					}}
 				/>
-				<script type="module" src={clientEntryUrl}></script>
+				<script type="module" src={client_entry_url}></script>
 			</body>
 		</html>
 	);
