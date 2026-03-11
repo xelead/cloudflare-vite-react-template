@@ -5,6 +5,7 @@ import {
 	PublicConfigProvider,
 	usePublicConfigData,
 } from "@src/ui/modules/publicconfig/publicconfig_data.tsx";
+import { app_name } from "@src/ui/common/app_name.ts";
 
 function AppLayout() {
 	const { data } = usePublicConfigData();
@@ -13,7 +14,7 @@ function AppLayout() {
 	return (
 		<div className="app" data-theme={theme}>
 			<header className="site-header">
-				<div className="brand">Cloudflare Vite React</div>
+				<div className="brand">{app_name}</div>
 				<nav className="nav">
 					<NavLink to="/" end>
 						Home

@@ -27,6 +27,10 @@ npm run dev
 
 Your application will be available at [http://localhost:5173](http://localhost:5173).
 
+### Environment Variables
+
+- `VITE_APP_NAME`: App name used across UI branding and page titles.
+
 ## Production
 
 Build your project for production:

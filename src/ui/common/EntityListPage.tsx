@@ -5,6 +5,7 @@ import {
 	logClientApiError,
 	readApiPayload,
 } from "@src/common/crud/api_response_utils.ts";
+import { app_name } from "./app_name.ts";
 import { DeleteConfirmDialog, useDeleteConfirmation } from "./DeleteConfirmDialog.tsx";
 import { EntityListGrid } from "./EntityListGrid.tsx";
 import { use_entity_meta } from "./use_entity_meta.ts";
@@ -117,12 +118,12 @@ export function EntityListPage<T extends { id: string }>({
 
 	return (
 		<div className="page">
-			<title>{`${entity_type_name}s | Cloudflare Vite React`}</title>
+			<title>{`${entity_type_name}s | ${app_name}`}</title>
 			<meta
 				name="description"
 				content={description ?? `Explore ${entity_code} loaded from the API.`}
 			/>
-			<meta property="og:title" content={`${entity_type_name}s | Cloudflare Vite React`} />
+			<meta property="og:title" content={`${entity_type_name}s | ${app_name}`} />
 			<meta
 				property="og:description"
 				content={description ?? `Explore ${entity_code} loaded from the API.`}
