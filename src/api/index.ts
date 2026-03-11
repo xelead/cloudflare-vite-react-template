@@ -8,6 +8,35 @@ import {
 	render_html_page,
 } from "@src/api/fw/ssr/html_page_response.ts";
 
+const global_with_warning_hook = globalThis as typeof globalThis & {
+	__timeout_warning_hook_installed__?: boolean;
+};
+
+if (!global_with_warning_hook.__timeout_warning_hook_installed__) {
+	global_with_warning_hook.__timeout_warning_hook_installed__ = true;
+	const node_process = (globalThis as typeof globalThis & {
+		process?: {
+			on?: (event_name: string, listener: (warning: Error) => void) => void;
+		};
+	}).process;
+	node_process?.on?.("warning", (warning) => {
+		if (warning.name !== "MaxListenersExceededWarning") return;
+		const details = warning as Error & {
+			emitter?: { constructor?: { name?: string } };
+			type?: string;
+			count?: number;
+		};
+		console.error("Max listeners warning", {
+			name: warning.name,
+			message: warning.message,
+			event_type: details.type ?? "unknown",
+			listener_count: details.count ?? "unknown",
+			emitter_type: details.emitter?.constructor?.name ?? "unknown",
+			stack: warning.stack,
+		});
+	});
+}
+
 const app = new Hono<{ Bindings: Env; Variables: IApiVariables }>();
 
 app.use("*", async (c, next) => {
