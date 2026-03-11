@@ -58,6 +58,9 @@ export type CoreDbSession = {
 	close: () => Promise<void>;
 };
 
+let cached_core_db_session: CoreDbSession | null = null;
+let cached_core_db_session_promise: Promise<CoreDbSession> | null = null;
+
 const connect_to_database = async (url: string): Promise<CoreDbSession> => {
 	if (!url) throw new Error("Missing XE_CORE_DB_URL.");
 	const normalized_url = normalize_mongo_url(url);
@@ -74,8 +77,25 @@ const connect_to_database = async (url: string): Promise<CoreDbSession> => {
 };
 
 export const connectToCoreDbSession = async (): Promise<CoreDbSession> => {
+	if (cached_core_db_session) {
+		return cached_core_db_session;
+	}
+
+	if (cached_core_db_session_promise) {
+		return cached_core_db_session_promise;
+	}
+
 	const url = await getEnvString("XE_CORE_DB_URL");
-	return connect_to_database(url);
+	cached_core_db_session_promise = connect_to_database(url)
+		.then((session) => {
+			cached_core_db_session = session;
+			return session;
+		})
+		.finally(() => {
+			cached_core_db_session_promise = null;
+		});
+
+	return cached_core_db_session_promise;
 };
 
 // Alias for backward compatibility
@@ -91,4 +111,13 @@ export async function disconnectCoreClient(
 	} catch (e) {
 		console.error("Error disconnecting from core database:", e);
 	}
+}
+
+export async function disconnectCachedCoreDbSession(): Promise<void> {
+	const session = cached_core_db_session;
+	cached_core_db_session = null;
+	cached_core_db_session_promise = null;
+	if (!session) return;
+
+	await disconnectCoreClient(session);
 }
