@@ -11,6 +11,7 @@ type AssetFetcher = {
 
 let cached_asset_urls: ClientAssetUrls | null = null;
 let cached_asset_urls_promise: Promise<ClientAssetUrls> | null = null;
+let warned_missing_assets_binding = false;
 
 export async function resolve_client_asset_urls(
 	c: IAppContext,
@@ -45,27 +46,49 @@ export async function resolve_client_asset_urls(
 async function load_client_asset_urls(c: IAppContext): Promise<ClientAssetUrls> {
 	const assets = (c.env as { ASSETS?: AssetFetcher }).ASSETS;
 	if (!assets) {
-		throw new Error("Missing ASSETS binding. Cannot resolve client bundle assets.");
+		warn_missing_assets_binding_once();
+		return {
+			moduleScriptSrc: null,
+			stylesheetHrefs: [],
+		};
 	}
 
 	const index_url = new URL("/index.html", c.req.url).toString();
 	const index_response = await assets.fetch(index_url);
 	if (!index_response.ok) {
-		throw new Error(
-			`Failed to load index.html from assets binding (status ${index_response.status}).`,
+		console.warn(
+			`Failed to load index.html from assets binding (status ${index_response.status}). SSR will render without hydration script.`,
 		);
+		return {
+			moduleScriptSrc: null,
+			stylesheetHrefs: [],
+		};
 	}
 
 	const index_html = await index_response.text();
 	const module_script_src = get_module_script_src(index_html);
 	if (!module_script_src) {
-		throw new Error("Failed to find module script src in built index.html.");
+		console.warn(
+			"Failed to find module script src in built index.html. SSR will render without hydration script.",
+		);
+		return {
+			moduleScriptSrc: null,
+			stylesheetHrefs: get_stylesheet_hrefs(index_html),
+		};
 	}
 
 	return {
 		moduleScriptSrc: module_script_src,
 		stylesheetHrefs: get_stylesheet_hrefs(index_html),
 	};
+}
+
+function warn_missing_assets_binding_once(): void {
+	if (warned_missing_assets_binding) return;
+	warned_missing_assets_binding = true;
+	console.warn(
+		"Missing ASSETS binding. SSR will render without hydration script. Configure the assets binding to enable hydration in production.",
+	);
 }
 
 function get_module_script_src(index_html: string): string | null {
