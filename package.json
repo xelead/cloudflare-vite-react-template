@@ -46,6 +46,7 @@
 		"check": "tsc && vite build && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",
 		"dev": "vite --host",
+		"devw": "USE_WRANGLER=true vite --host",
 		"format": "corepack pnpm dlx prettier@3.6.2 --write . --use-tabs --single-quote false --trailing-comma all --semi true",
 		"lint": "eslint .",
 		"postinstall": "patch-package",

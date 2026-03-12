@@ -28,7 +28,7 @@ export default defineConfig(async () => {
 		},
 		server: {
 			port: 9010,
-			allowedHosts: ["remotepc1.xelead.com"],
+			allowedHosts: ["remotepc1.xelead.com", "35.161.224.53"],
 		},
 		resolve: {
 			alias: {
